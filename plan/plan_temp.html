@@ -1,0 +1,1386 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>古着転売キャッシュフロー予測</title>
+<style>
+:root{color-scheme:light dark}
+html,body{margin:0}
+body{font:14px/1.7 system-ui,-apple-system,"Segoe UI",sans-serif}
+img{max-width:100%}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@700&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+
+<style>
+:root{
+  --bg:#EEF0F3; --surface:#FFFFFF; --surface-2:#F6F8FA; --sunk:#E4E8ED;
+  --ink:#131A22; --ink-2:#4A545F; --ink-3:#79838E;
+  --line:#DBE0E6; --line-2:#EAEDF1;
+  --s1:#31609F; --s2:#D4762A; --s3:#0E8F7E;
+  --s1-soft:rgba(49,96,159,.14); --s3-soft:rgba(14,143,126,.13);
+  --danger:#AE2A20; --danger-bg:rgba(174,42,32,.10); --danger-bd:rgba(174,42,32,.34);
+  --good:#17693F; --good-bg:rgba(23,105,63,.10); --good-bd:rgba(23,105,63,.34);
+  --s3-bd:rgba(14,143,126,.34);
+  --shadow:0 1px 2px rgba(19,26,34,.06), 0 8px 24px -14px rgba(19,26,34,.22);
+  --display:"Shippori Mincho B1",serif;
+  --body:"Zen Kaku Gothic New","Hiragino Sans","Noto Sans JP",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#101317; --surface:#17191C; --surface-2:#1C1F24; --sunk:#0B0D10;
+    --ink:#EDEFF2; --ink-2:#A6AFB9; --ink-3:#79838E;
+    --line:#2A2F35; --line-2:#23272C;
+    --s1:#4E82C6; --s2:#CD8134; --s3:#19AC96;
+    --s1-soft:rgba(78,130,198,.18); --s3-soft:rgba(25,172,150,.15);
+    --danger:#E0736A; --danger-bg:rgba(224,115,106,.13); --danger-bd:rgba(224,115,106,.38);
+    --good:#4FB07A; --good-bg:rgba(79,176,122,.13); --good-bd:rgba(79,176,122,.38);
+    --s3-bd:rgba(25,172,150,.38);
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 26px -16px rgba(0,0,0,.8);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#101317; --surface:#17191C; --surface-2:#1C1F24; --sunk:#0B0D10;
+  --ink:#EDEFF2; --ink-2:#A6AFB9; --ink-3:#79838E;
+  --line:#2A2F35; --line-2:#23272C;
+  --s1:#4E82C6; --s2:#CD8134; --s3:#19AC96;
+  --s1-soft:rgba(78,130,198,.18); --s3-soft:rgba(25,172,150,.15);
+  --danger:#E0736A; --danger-bg:rgba(224,115,106,.13);
+  --good:#4FB07A; --good-bg:rgba(79,176,122,.13);
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 26px -16px rgba(0,0,0,.8);
+}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);line-height:1.7;
+  -webkit-font-smoothing:antialiased;margin:0}
+.wrap{max-width:1140px;margin:0 auto;padding-inline:20px;padding-block:40px 72px}
+h1,h2,h3{text-wrap:balance;margin:0}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+
+/* ---------- header ---------- */
+header{border-bottom:2px solid var(--ink);padding-bottom:22px;margin-bottom:28px}
+.eyebrow{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3);
+  font-weight:700;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.eyebrow > span{flex:0 1 auto}
+.eyebrow::after{content:"";flex:1 0 20px;height:1px;background:var(--line)}
+h1{font-family:var(--display);font-size:clamp(27px,5.2vw,42px);line-height:1.25;margin:10px 0 12px;letter-spacing:.01em}
+.lede{color:var(--ink-2);font-size:15px;max-width:62ch}
+.lede b{color:var(--ink);font-weight:700}
+
+/* ---------- section headings ---------- */
+.sec{margin-top:44px}
+.sec-head{display:flex;align-items:baseline;gap:8px 14px;margin-bottom:14px;flex-wrap:wrap}
+.sec-head h2{font-family:var(--display);font-size:19px;letter-spacing:.02em}
+.sec-head .rule{flex:1 1 20px;height:1px;background:var(--line)}
+.sec-head .note{font-size:12px;color:var(--ink-3);min-width:0;text-align:right;flex-shrink:1}
+
+/* ---------- params ---------- */
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:3px;box-shadow:var(--shadow)}
+.pgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;background:var(--line-2)}
+.pf{background:var(--surface);padding:12px 14px 13px;display:flex;flex-direction:column;gap:5px}
+.pf label{font-size:11px;color:var(--ink-3);font-weight:700;letter-spacing:.05em;display:flex;justify-content:space-between;gap:6px}
+.pf label .u{color:var(--ink-3);font-weight:500;letter-spacing:0}
+.pf input{font-family:var(--mono);font-size:17px;font-weight:600;color:var(--ink);
+  background:transparent;border:0;border-bottom:1.5px solid var(--line);padding:2px 0;width:100%;
+  font-variant-numeric:tabular-nums}
+.pf input:focus{outline:none;border-bottom-color:var(--s1);box-shadow:0 1px 0 var(--s1)}
+.turnwrap{overflow-x:auto;background:var(--surface)}
+table.turn{min-width:600px;font-size:12.5px}
+table.turn th{font-size:10px;padding:7px 14px;line-height:1.45}
+table.turn th span{font-weight:500;color:var(--ink-3);letter-spacing:0}
+table.turn td{padding:4px 14px}
+table.turn tbody td:first-child{font-weight:500;font-size:12.5px;white-space:nowrap}
+table.turn input{width:64px;text-align:right;font-family:var(--mono);font-size:14.5px;font-weight:600;
+  font-variant-numeric:tabular-nums;background:transparent;border:0;border-bottom:1.5px solid var(--s2);
+  color:var(--ink);padding:1px 0}
+table.turn input:focus{outline:none;border-bottom-color:var(--s1);box-shadow:0 1px 0 var(--s1)}
+table.turn tr.cut input[id^="r"]{border-bottom-color:var(--danger);color:var(--danger)}
+table.turn td.eff{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:12.5px;color:var(--ink-2)}
+table.turn tr.cut td.eff{color:var(--danger)}
+table.turn td.note{font-size:11px;color:var(--ink-3);text-align:left;white-space:nowrap}
+table.turn tr.dead td{color:var(--ink-3)}
+table.turn tr.dead input{border-bottom-color:var(--ink-3)}
+.pf.exist input{border-bottom-color:var(--s3)}
+.pf.exist label{color:var(--s3)}
+.pf.cost{background:var(--surface-2)}
+.pf.cost input{border-bottom-color:var(--danger)}
+.pf.cost label{color:var(--danger)}
+.pf.store input{border-bottom-color:var(--s2)}
+.pf.store label{color:var(--s2)}
+.prow{font-size:11px;font-weight:700;letter-spacing:.08em;color:var(--ink);padding:8px 14px 7px;
+  background:var(--surface-2);border-top:1px solid var(--line);display:flex;gap:9px;align-items:center}
+.prow:first-child{border-top:0}
+.prow::before{content:"";width:3px;height:12px;background:var(--pc,var(--ink-3));border-radius:1px;flex:none}
+.prow span{font-weight:500;letter-spacing:.02em;color:var(--ink-3);font-size:11px}
+.pbar{display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:11px 14px;border-top:1px solid var(--line-2);
+  background:var(--surface-2);font-size:12px;color:var(--ink-3)}
+.pbar .spacer{flex:1;min-width:8px}
+button{font-family:var(--body);font-size:12px;font-weight:700;cursor:pointer;
+  background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:2px;padding:6px 12px}
+button:hover{border-color:var(--ink-3)}
+button:focus-visible,input:focus-visible{outline:2px solid var(--s1);outline-offset:2px}
+button.primary{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+
+/* ---------- cost structure ---------- */
+.costgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1px;background:var(--line-2)}
+.cc{background:var(--surface);padding:13px 15px 14px;display:flex;flex-direction:column;gap:3px}
+.cc .lbl{font-size:11.5px;font-weight:700;color:var(--ink-2);display:flex;align-items:center;gap:6px}
+.cc .lbl::before{content:"";width:6px;height:6px;border-radius:1px;background:var(--cc,var(--danger));flex:none}
+.cc .amt{font-family:var(--mono);font-size:21px;font-weight:600;letter-spacing:-.02em;line-height:1.2}
+.cc .det{font-size:11px;color:var(--ink-3)}
+.cc.total{background:var(--surface-2)}
+.cc.total .amt{color:var(--danger)}
+.cc.net .amt{color:var(--s2)}
+.bar{height:8px;border-radius:2px;display:flex;overflow:hidden;gap:2px;margin-top:2px}
+.bar span{display:block;height:100%;border-radius:1px}
+
+/* ---------- KPI ---------- */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px;margin-top:14px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--accent,var(--s1));
+  border-radius:3px;padding:15px 16px 14px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:2px}
+.kpi .k{font-size:11.5px;font-weight:700;color:var(--ink-2);letter-spacing:.03em}
+.kpi .v{font-family:var(--mono);font-size:28px;font-weight:600;line-height:1.15;letter-spacing:-.02em;margin-top:3px}
+.kpi .v small{font-size:15px;font-weight:500;color:var(--ink-2);margin-left:1px}
+.kpi .s{font-size:11.5px;color:var(--ink-3);line-height:1.5}
+
+/* ---------- alert ---------- */
+.alert{display:flex;gap:11px;align-items:flex-start;padding:12px 14px;border-radius:3px;font-size:13px;margin-top:14px;line-height:1.6}
+.alert.bad{background:var(--danger-bg);color:var(--danger);border:1px solid var(--danger-bd)}
+.alert.ok{background:var(--good-bg);color:var(--good);border:1px solid var(--good-bd)}
+.alert.neutral{background:var(--s3-soft);color:var(--s3);border:1px solid var(--s3-bd)}
+.alert .ic{font-family:var(--mono);font-weight:600;flex:none}
+.alert b{font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+/* ---------- charts ---------- */
+figure{margin:0}
+.chart{background:var(--surface);border:1px solid var(--line);border-radius:3px;box-shadow:var(--shadow);
+  padding:16px 16px 10px;position:relative}
+.chart-top{display:flex;justify-content:space-between;align-items:baseline;gap:14px;flex-wrap:wrap;margin-bottom:6px}
+.chart-top h3{font-size:14px;font-weight:700;letter-spacing:.01em}
+.chart-top .sub{font-size:11.5px;color:var(--ink-3)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:11.5px;color:var(--ink-2);font-weight:500}
+.legend i{display:inline-block;width:11px;height:3px;border-radius:2px;vertical-align:middle;margin-right:5px}
+.host{width:100%;position:relative}
+.host svg{display:block;width:100%}
+.tip{position:absolute;pointer-events:none;opacity:0;transition:opacity .1s;z-index:5;
+  background:var(--surface);border:1px solid var(--line);border-radius:3px;box-shadow:var(--shadow);
+  padding:8px 10px;font-size:11.5px;line-height:1.65;white-space:nowrap;color:var(--ink)}
+.tip .th{font-weight:700;font-size:11px;color:var(--ink-2);margin-bottom:3px;letter-spacing:.03em}
+.tip .tr{display:flex;justify-content:space-between;gap:16px}
+.tip .tr span:last-child{font-family:var(--mono);font-variant-numeric:tabular-nums;font-weight:600}
+.tip i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:6px}
+
+/* ---------- table ---------- */
+.tscroll{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:3px;box-shadow:var(--shadow)}
+table{border-collapse:collapse;width:100%;font-size:12.5px;min-width:820px}
+th,td{padding:8px 11px;text-align:right;white-space:nowrap;border-bottom:1px solid var(--line-2)}
+th{font-size:10.5px;font-weight:700;color:var(--ink-3);letter-spacing:.04em;text-align:right;
+  background:var(--surface-2);border-bottom:1px solid var(--line);position:sticky;top:0}
+th:first-child,td:first-child{text-align:left;position:sticky;left:0;background:var(--surface);z-index:1}
+th:first-child{background:var(--surface-2);z-index:2}
+tbody td{font-family:var(--mono);font-variant-numeric:tabular-nums}
+tbody td:first-child{font-family:var(--body);font-weight:700;font-size:12px}
+tbody tr:hover td{background:var(--surface-2)}
+tbody tr.phase-end td:first-child::after{content:" ⟡";color:var(--s2)}
+td.neg{color:var(--danger);font-weight:600}
+td.dim{color:var(--ink-3)}
+tfoot td{border-top:2px solid var(--ink);border-bottom:0;font-family:var(--mono);font-weight:600;padding-top:10px}
+tfoot td:first-child{font-family:var(--body)}
+
+/* ---------- channel table ---------- */
+.chtable{min-width:760px}
+.chtable td:first-child{font-weight:700;font-family:var(--body);white-space:nowrap}
+.chtable td i{width:8px;height:8px;border-radius:2px;display:inline-block;margin-right:7px}
+.chtable td:nth-child(2){font-family:var(--body);font-size:11.5px;text-align:left}
+.chtable th:nth-child(2){text-align:left}
+.chtable tr.tot td{border-top:1px solid var(--line);background:var(--surface-2);font-weight:600}
+.chtable tr.tot td:first-child{background:var(--surface-2)}
+.chtable tr.ded td{color:var(--danger);font-family:var(--body);font-size:12px}
+.chtable tr.ded td:last-child,.chtable tr.ded td:nth-last-child(2){font-family:var(--mono)}
+.chtable tr.fin td{border-top:2px solid var(--ink);border-bottom:0;font-weight:700;
+  font-family:var(--mono);color:var(--s2);font-size:14px;padding-top:10px}
+.chtable tr.fin td:first-child{font-family:var(--body);color:var(--ink);font-size:13px}
+.chtable tr.ded td:first-child,.chtable tr.fin td:first-child{text-align:left}
+
+/* ---------- save ---------- */
+.savebar{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:1px;background:var(--line-2);padding:0}
+button.save{display:flex;flex-direction:column;align-items:flex-start;gap:3px;text-align:left;
+  background:var(--surface);border:0;border-radius:0;padding:15px 17px 16px;cursor:pointer;width:100%}
+button.save b{font-size:13.5px;font-weight:700;color:var(--ink);display:flex;align-items:center;gap:8px}
+button.save b::before{content:"";width:7px;height:7px;border-radius:1px;background:var(--s1);flex:none}
+button.save:nth-child(2) b::before{background:var(--s2)}
+button.save:nth-child(3) b::before{background:var(--s3)}
+button.save span{font-size:11.5px;color:var(--ink-3);line-height:1.55;font-weight:400}
+button.save:hover{background:var(--surface-2)}
+button.save:disabled{opacity:.55;cursor:progress}
+.save-na{padding:15px 17px;font-size:12.5px;color:var(--ink-3);background:var(--surface);grid-column:1/-1}
+
+/* ---------- notes ---------- */
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
+.note-card{background:var(--surface);border:1px solid var(--line);border-radius:3px;padding:15px 17px 16px;box-shadow:var(--shadow)}
+.note-card h4{margin:0 0 8px;font-size:13px;font-weight:700;display:flex;align-items:center;gap:7px}
+.note-card h4::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--accent,var(--s1));flex:none}
+.note-card ul{margin:0;padding-left:17px;font-size:13px;color:var(--ink-2);line-height:1.72}
+.note-card li{margin-bottom:5px}
+.note-card li:last-child{margin-bottom:0}
+.note-card b{color:var(--ink);font-family:var(--mono);font-weight:600}
+footer{margin-top:40px;padding-top:18px;border-top:1px solid var(--line);font-size:11.5px;color:var(--ink-3);
+  display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap}
+
+@media (max-width:560px){
+  .wrap{padding-block:28px 52px}
+  .kpi .v{font-size:24px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div class="wrap">
+
+<header>
+  <div class="eyebrow"><span>中古アパレル 電脳＋店舗仕入 → メルカリ販売 / <span id="hd_months">12</span>ヶ月資金繰り予測</span></div>
+  <h1>仕入れは毎日、回収は数ヶ月先。<br>その間の資金の谷を測る。</h1>
+  <p class="lede">電脳リサーチの毎日の仕入れと、週<span id="hd_trips">1</span>回の店舗まとめ買い。現金は毎日出ていくのに、入ってくるのは出品から平均<b><span id="hd_hold">41</span>日後</b>です。この時間差が<b>在庫という名の資金拘束</b>になり、谷の深さがそのまま必要な運転資金になります。数値を書き換えればその場で再計算します。</p>
+</header>
+
+<!-- ============ 前提パラメータ ============ -->
+<section class="sec" style="margin-top:0">
+  <div class="sec-head"><h2>前提条件</h2><div class="rule"></div><div class="note">数値を直接編集できます</div></div>
+  <div class="panel">
+    <div class="prow" style="--pc:var(--s1)">電脳リサーチ仕入れ<span>毎日</span></div>
+    <div class="pgrid">
+      <div class="pf"><label for="p_qty">1日の仕入点数<span class="u">点</span></label><input class="num" id="p_qty" type="number" step="0.1" min="0" value="2"></div>
+      <div class="pf"><label for="p_cost">仕入単価<span class="u">円</span></label><input class="num" id="p_cost" type="number" step="500" min="0" value="10000"></div>
+      <div class="pf"><label for="p_profit">1点の純利益<span class="u">円</span></label><input class="num" id="p_profit" type="number" step="100" value="3500"></div>
+    </div>
+    <div class="prow" style="--pc:var(--s2)">店舗仕入れ<span>まとめ買い</span></div>
+    <div class="pgrid">
+      <div class="pf store"><label for="st_trips">週の仕入回数<span class="u">回/週</span></label><input class="num" id="st_trips" type="number" step="0.5" min="0" value="1"></div>
+      <div class="pf store"><label for="st_qty">1回の仕入点数<span class="u">点</span></label><input class="num" id="st_qty" type="number" step="1" min="0" value="14"></div>
+      <div class="pf store"><label for="st_cost">仕入単価<span class="u">円</span></label><input class="num" id="st_cost" type="number" step="500" min="0" value="4000"></div>
+      <div class="pf store"><label for="st_profit">1点の純利益<span class="u">円</span></label><input class="num" id="st_profit" type="number" step="100" value="3000"></div>
+      <div class="pf store"><label for="st_rent">レンタカー代<span class="u">円/回</span></label><input class="num" id="st_rent" type="number" step="500" min="0" value="5500"></div>
+    </div>
+    <div class="prow" style="--pc:var(--ink-3)">回転率と利益の扱い<span>両チャネル共通・構成比は合計100%に自動補正</span></div>
+    <div class="turnwrap">
+      <table class="turn">
+        <thead><tr>
+          <th>売れるまでの期間</th><th>構成比</th><th>純利益の適用率</th>
+          <th>1点の実効純利益<br><span>電脳 ／ 店舗</span></th><th>扱い</th>
+        </tr></thead>
+        <tbody>
+          <tr><td>〜1ヶ月</td><td><input id="t0" type="number" step="1" min="0" value="55"></td><td><input id="r0" type="number" step="5" value="100"></td><td class="eff" id="x0">—</td><td class="note" id="n0"></td></tr>
+          <tr><td>1〜2ヶ月</td><td><input id="t1" type="number" step="1" min="0" value="17"></td><td><input id="r1" type="number" step="5" value="100"></td><td class="eff" id="x1">—</td><td class="note" id="n1"></td></tr>
+          <tr><td>2〜3ヶ月</td><td><input id="t2" type="number" step="1" min="0" value="11"></td><td><input id="r2" type="number" step="5" value="100"></td><td class="eff" id="x2">—</td><td class="note" id="n2"></td></tr>
+          <tr><td>3〜4ヶ月</td><td><input id="t3" type="number" step="1" min="0" value="4"></td><td><input id="r3" type="number" step="5" value="100"></td><td class="eff" id="x3">—</td><td class="note" id="n3"></td></tr>
+          <tr><td>4〜6ヶ月</td><td><input id="t4" type="number" step="0.5" min="0" value="5"></td><td><input id="r4" type="number" step="5" value="0"></td><td class="eff" id="x4">—</td><td class="note" id="n4"></td></tr>
+          <tr><td>6〜9ヶ月</td><td><input id="t5" type="number" step="0.5" min="0" value="3"></td><td><input id="r5" type="number" step="5" value="0"></td><td class="eff" id="x5">—</td><td class="note" id="n5"></td></tr>
+          <tr><td>9〜12ヶ月</td><td><input id="t6" type="number" step="0.5" min="0" value="3"></td><td><input id="r6" type="number" step="5" value="100"></td><td class="eff" id="x6">—</td><td class="note" id="n6"></td></tr>
+          <tr><td>12ヶ月以降</td><td><input id="t7" type="number" step="0.5" min="0" value="2"></td><td><input id="r7" type="number" step="5" value="100"></td><td class="eff" id="x7">—</td><td class="note" id="n7"></td></tr>
+          <tr class="dead"><td>最終的に売れない</td><td><input id="t_dead" type="number" step="0.5" min="0" value="0"></td><td>—</td><td class="eff">—</td><td class="note">在庫として残り続けます</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="prow" style="--pc:var(--s3)">現在すでに抱えている在庫<span>仕入代金は支払済みとして扱います</span></div>
+    <div class="pgrid">
+      <div class="pf exist"><label for="e0">在庫 仕入〜1ヶ月<span class="u">点</span></label><input class="num" id="e0" type="number" step="1" min="0" value="42"></div>
+      <div class="pf exist"><label for="e1">在庫 1〜2ヶ月<span class="u">点</span></label><input class="num" id="e1" type="number" step="1" min="0" value="32"></div>
+      <div class="pf exist"><label for="e2">在庫 2〜3ヶ月<span class="u">点</span></label><input class="num" id="e2" type="number" step="1" min="0" value="27"></div>
+      <div class="pf exist"><label for="e3">在庫 3ヶ月以上<span class="u">点</span></label><input class="num" id="e3" type="number" step="1" min="0" value="15"></div>
+      <div class="pf exist"><label for="e_un">未出品の在庫<span class="u">点</span></label><input class="num" id="e_un" type="number" step="1" min="0" value="48"></div>
+      <div class="pf exist"><label for="e_cost">既存の平均仕入単価<span class="u">円</span></label><input class="num" id="e_cost" type="number" step="500" min="0" value="5600"></div>
+      <div class="pf exist"><label for="e_profit">既存の平均純利益<span class="u">円</span></label><input class="num" id="e_profit" type="number" step="100" value="2500"></div>
+    </div>
+    <div class="prow" style="--pc:var(--danger)">共通コストと資金<span>両チャネルにかかるもの</span></div>
+    <div class="pgrid">
+      <div class="pf"><label for="l_rate">1日の出品数<span class="u">点/日</span></label><input class="num" id="l_rate" type="number" step="1" min="0" value="4"></div>
+      <div class="pf cost"><label for="c_list">出品外注費<span class="u">円/点</span></label><input class="num" id="c_list" type="number" step="50" min="0" value="550"></div>
+      <div class="pf cost"><label for="c_ai">AIリサーチツール<span class="u">USD/日</span></label><input class="num" id="c_ai" type="number" step="0.5" min="0" value="2"></div>
+      <div class="pf cost"><label for="c_fx">為替レート<span class="u">円/USD</span></label><input class="num" id="c_fx" type="number" step="0.5" min="0" value="153.6"></div>
+      <div class="pf cost"><label for="c_fixed">その他固定費<span class="u">円/月</span></label><input class="num" id="c_fixed" type="number" step="1000" min="0" value="0"></div>
+      <div class="pf"><label for="p_cap">初期資金<span class="u">円</span></label><input class="num" id="p_cap" type="number" step="50000" min="0" value="1000000"></div>
+      <div class="pf"><label for="p_months">予測期間<span class="u">ヶ月</span></label><input class="num" id="p_months" type="number" step="1" min="1" max="36" value="18"></div>
+    </div>
+    <div class="pbar">
+      <span>平均滞留 <b class="num" id="s_avg" style="color:var(--ink)">41.0</b> 日 ／ 回転率合計 <b class="num" id="s_sum" style="color:var(--ink)">100</b>%（100%になるよう自動補正）<span id="s_exist"></span></span>
+      <span class="spacer"></span>
+      <button type="button" id="btn_csv">月次CSVをコピー</button>
+      <button type="button" id="btn_reset">初期値に戻す</button>
+    </div>
+  </div>
+</section>
+
+<!-- ============ KPI ============ -->
+<section class="sec">
+  <div class="sec-head"><h2>要点</h2><div class="rule"></div><div class="note">この4つで全体が決まります</div></div>
+  <div class="kpis">
+    <div class="kpi" style="--accent:var(--danger)">
+      <div class="k">必要運転資金</div><div class="v" id="k_need">—</div>
+      <div class="s" id="k_need_s">—</div>
+    </div>
+    <div class="kpi" style="--accent:var(--s3)">
+      <div class="k">定常時の在庫</div><div class="v" id="k_inv">—</div>
+      <div class="s" id="k_inv_s">—</div>
+    </div>
+    <div class="kpi" style="--accent:var(--s2)">
+      <div class="k">定常時の月間営業利益</div><div class="v" id="k_mp">—</div>
+      <div class="s" id="k_mp_s">—</div>
+    </div>
+    <div class="kpi" style="--accent:var(--s1)">
+      <div class="k">期末の総資産</div><div class="v" id="k_end">—</div>
+      <div class="s" id="k_end_s">—</div>
+    </div>
+  </div>
+  <div id="verdict"></div>
+</section>
+
+<!-- ============ チャネル別 ============ -->
+<section class="sec">
+  <div class="sec-head"><h2>チャネル別の採算</h2><div class="rule"></div><div class="note">定常時・月あたり</div></div>
+  <div class="tscroll">
+    <table class="chtable">
+      <thead><tr>
+        <th>チャネル</th><th>ペース</th><th>仕入点数</th><th>仕入単価</th><th>仕入金額</th>
+        <th>商品粗利</th><th>直接経費</th><th>貢献利益</th><th>投下資金あたり</th>
+      </tr></thead>
+      <tbody id="chbody"></tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ============ コスト構造 ============ -->
+<section class="sec">
+  <div class="sec-head"><h2>コスト構造</h2><div class="rule"></div><div class="note">定常時・月あたり</div></div>
+  <div class="panel">
+    <div class="costgrid" id="costgrid"></div>
+    <div class="pbar" id="costnote"></div>
+  </div>
+</section>
+
+<!-- ============ 資金の谷 ============ -->
+<section class="sec">
+  <div class="sec-head"><h2>資金の谷</h2><div class="rule"></div><div class="note">日次・手元現金</div></div>
+  <figure class="chart">
+    <div class="chart-top">
+      <div><h3>手元現金と総資産の推移</h3><div class="sub">総資産 = 手元現金 + 在庫の仕入原価。利益は出ていても現金は減る局面があります。</div></div>
+      <div class="legend">
+        <span><i style="background:var(--s1)"></i>手元現金</span>
+        <span><i style="background:var(--s3)"></i>総資産（現金+在庫）</span>
+      </div>
+    </div>
+    <div class="host" id="h_cash"><div class="tip" id="tip_cash"></div></div>
+  </figure>
+</section>
+
+<!-- ============ 月次利益 ============ -->
+<section class="sec">
+  <div class="sec-head"><h2>利益の立ち上がり</h2><div class="rule"></div><div class="note">月次・営業利益（経費差引後）</div></div>
+  <figure class="chart">
+    <div class="chart-top">
+      <div><h3>月別の営業利益</h3><div class="sub">破線の枠が商品粗利、実線のバーが経費を引いた後。その差が毎月の固定的な持ち出しです。</div></div>
+      <div class="legend">
+        <span><i style="background:transparent;border:1.2px dashed var(--s2);height:9px;border-radius:2px;width:13px"></i>商品粗利</span>
+        <span><i style="background:var(--s2)"></i>営業利益</span>
+      </div>
+    </div>
+    <div class="host" id="h_profit"><div class="tip" id="tip_profit"></div></div>
+  </figure>
+</section>
+
+<!-- ============ 在庫 ============ -->
+<section class="sec">
+  <div class="sec-head"><h2>在庫の積み上がり</h2><div class="rule"></div><div class="note">日次・在庫点数</div></div>
+  <figure class="chart">
+    <div class="chart-top">
+      <div><h3>保有在庫の点数と金額</h3><div class="sub">仕入ペース × 平均滞留日数で頭打ちになります。ここが保管スペースの上限設計にもなります。</div></div>
+      <div class="legend">
+        <span><i style="background:var(--s3)"></i>在庫の合計</span>
+        <span><i style="background:transparent;border-top:2px dashed var(--ink-2);height:0;width:13px"></i>うち未出品</span>
+      </div>
+    </div>
+    <div class="host" id="h_inv"><div class="tip" id="tip_inv"></div></div>
+  </figure>
+</section>
+
+<!-- ============ 仕入停止後 ============ -->
+<section class="sec">
+  <div class="sec-head"><h2>仕入れを止めたら</h2><div class="rule"></div><div class="note">在庫が現金に変わるまで</div></div>
+  <div class="panel" style="margin-bottom:14px">
+    <div class="pbar" style="border-top:0">
+      <label for="w_stop" style="font-weight:700;color:var(--ink)">仕入れを止める時期</label>
+      <input class="num" id="w_stop" type="number" step="1" min="1" max="36" value="10"
+        style="width:62px;font-family:var(--mono);font-size:16px;font-weight:600;background:transparent;border:0;border-bottom:1.5px solid var(--s1);color:var(--ink);padding:2px 0">
+      <span>ヶ月目の末で、両チャネルとも新規の仕入れをやめる</span>
+      <span class="spacer"></span>
+      <span id="w_assume">出品外注費・レンタカー代・AIツール代も同時に停止。その他固定費のみ継続</span>
+    </div>
+  </div>
+  <div class="kpis" style="margin-bottom:14px">
+    <div class="kpi" style="--accent:var(--s3)">
+      <div class="k">停止時点の在庫</div><div class="v" id="w_inv">—</div><div class="s" id="w_inv_s">—</div>
+    </div>
+    <div class="kpi" style="--accent:var(--s2)">
+      <div class="k">在庫から回収される現金</div><div class="v" id="w_recv">—</div><div class="s" id="w_recv_s">—</div>
+    </div>
+    <div class="kpi" style="--accent:var(--s1)">
+      <div class="k">最終的な手元現金</div><div class="v" id="w_cash">—</div><div class="s" id="w_cash_s">—</div>
+    </div>
+    <div class="kpi" style="--accent:var(--ink-3)">
+      <div class="k">回収にかかる期間</div><div class="v" id="w_days">—</div><div class="s" id="w_days_s">—</div>
+    </div>
+  </div>
+  <figure class="chart">
+    <div class="chart-top">
+      <div><h3>在庫が現金に変わる過程</h3><div class="sub">縦の破線が仕入停止日。ここから先は出ていく現金がなくなり、在庫が一方的に現金へ置き換わっていきます。</div></div>
+      <div class="legend">
+        <span><i style="background:var(--s3)"></i>在庫金額</span>
+        <span><i style="background:var(--s1)"></i>手元現金</span>
+        <span><i style="background:var(--s2)"></i>総資産</span>
+      </div>
+    </div>
+    <div class="host" id="h_wind"><div class="tip" id="tip_wind"></div></div>
+  </figure>
+</section>
+
+<!-- ============ 台帳 ============ -->
+<section class="sec">
+  <div class="sec-head"><h2>月次台帳</h2><div class="rule"></div><div class="note">30日を1ヶ月として集計 ／ ⟡ = 在庫が定常水準に到達</div></div>
+  <div class="tscroll">
+    <table>
+      <thead><tr>
+        <th>月</th><th>仕入点数</th><th>仕入金額</th><th>出品点数</th><th>月末未出品</th><th>売却点数</th><th>うち店舗</th><th>うち損切り</th><th>売上入金</th>
+        <th>商品粗利</th><th>諸経費</th><th>営業利益</th><th>月末在庫</th><th>在庫金額</th><th>月末現金</th><th>累計営業利益</th><th>総資産</th>
+      </tr></thead>
+      <tbody id="tbody"></tbody>
+      <tfoot id="tfoot"></tfoot>
+    </table>
+  </div>
+</section>
+
+<!-- ============ 注意 ============ -->
+<section class="sec">
+  <div class="sec-head"><h2>読み方と、このモデルが見ていないもの</h2><div class="rule"></div></div>
+  <div class="cols">
+    <div class="note-card" style="--accent:var(--s3)">
+      <h4>既存在庫の扱い（ここは少し甘めに出ます）</h4>
+      <ul>
+        <li>各バケットは代表日数 <b>15 / 45 / 75 / 100日</b> 経過として計算し、「そこまで売れずに残った」という条件付きで残りの期間に配分します。</li>
+        <li>分布が18ヶ月まで伸びたので、古い在庫が「もうすぐ売れる」ことになる以前の歪みは解消されています。ただし<b>3ヶ月以上の在庫は4〜9ヶ月の損切りゾーンに入りやすい</b>ぶん、回収額は控えめに出ます。</li>
+        <li>既存在庫の単価・利益は新規と別に入れられます。古い在庫を値下げして捌くなら<b>純利益をマイナス</b>（例：−1,000円）にすれば、損切りしながら現金化する動きも試算できます。</li>
+      </ul>
+    </div>
+    <div class="note-card" style="--accent:var(--s1)">
+      <h4>計算のしかた</h4>
+      <ul>
+        <li>各区切りの構成比を、その期間内の日数で<b>均等に日割り</b>して配分しています（例：50%を1〜30日に日割り）。実際は月末やセール時に偏りますが、平均としては妥当です。</li>
+        <li><b>損切り（適用率0%）</b>は、売値＝仕入原価として計算します。現金は原価ぶんだけ戻り、粗利はゼロ。手数料や送料はすでに純利益から引いた後の数字なので、実際にはわずかに原価割れします。</li>
+        <li><b>「12ヶ月以降」</b>は12〜18ヶ月を代表区間として計算しています。季節が一周して売れる、という前提です。</li>
+        <li>売却時の入金は <b>仕入単価 + 純利益</b>。純利益はメルカリ手数料10%・送料・梱包材を引いた後の手取りという前提です。</li>
+        <li>売上金は<b>即日</b>現金化として計上。実際は受取評価〜振込で5〜10日遅れるため、現金は表より数日分（1日2点なら<b>約10万円</b>）薄く出ます。</li>
+        <li><b>既存在庫</b>は仕入代金を支払済みとして扱うので、現金は<b>入ってくるだけ</b>です。ここが谷を浅くします。</li>
+      </ul>
+    </div>
+    <div class="note-card" style="--accent:var(--s2)">
+      <h4>この予測に入っていないコスト</h4>
+      <ul>
+        <li><b>原価割れの損切り</b>：適用率は0%が下限なので、原価を下回る投げ売りは表現できません。純利益の欄をマイナスにするか、仕入単価を実質的な回収額まで下げて試算してください。</li>
+        <li><b>出品外注費とAIツール代は反映済み</b>です。交通費・ガソリン代・保管費は「その他固定費」欄に月額で入れてください。</li>
+        <li><b>回転率の起点は「出品日」</b>です。仕入れてから出品されるまでの待ち時間はそれとは別に積まれるので、仕入から現金化までの実時間は「待ち日数＋滞留日数」になります。</li>
+        <li><b>外注費は出品した日</b>に発生します。未出品のうちは払わないので、待ち行列は現金流出を先送りする方向に働きます。</li>
+        <li><b>店舗仕入れ</b>は週◯回のまとめ買いとして、その日にドンと現金が出る形で計算しています。回転率は電脳と同じ分布を使っています。</li>
+        <li><b>税金</b>：所得税・住民税、売上1,000万円超なら消費税。年間の累計純利益はあくまで税引前です。</li>
+        <li><b>自分の人件費</b>：撮影・出品・梱包・発送は1点あたり20〜30分。1日2点なら1時間/日が乗っています。</li>
+      </ul>
+    </div>
+    <div class="note-card" style="--accent:var(--s3)">
+      <h4>次にいじると面白い数字</h4>
+      <ul>
+        <li><b>回転率</b>を5ポイント速い側へ動かすだけで必要運転資金が数万円単位で変わります。仕入点数を増やすより、まず回転を速くする方が資金効率は上がります。</li>
+        <li><b>仕入点数</b>を3点/日にすると必要運転資金は約1.5倍。利益も1.5倍ですが、谷を越える資金が先に要ります。</li>
+        <li><b>店舗の仕入回数</b>。レンタカー代は回数に比例するので、1回あたりの仕入点数を増やすほど1点あたりの交通費が下がります。週1回20点と週2回14点を比べてみてください。</li>
+        <li><b>出品外注費</b>は売上に比例せず仕入点数に比例します。1点あたり実質利益（純利益−外注費）が、事業の本当の単価です。</li>
+        <li><b>AIツール代</b>は完全な固定費なので、仕入点数を増やすほど1点あたりの負担が軽くなります。損益分岐点数を見ながらペースを決めてください。</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 保存 ============ -->
+
+
+<footer>
+  <span>古物商としての仕入・販売を前提とした資金繰りの試算です。税務・会計の判断は税理士にご確認ください。</span>
+  <span class="num" id="stamp"></span>
+</footer>
+</div>
+
+<script>
+(function(){
+"use strict";
+const $ = id => document.getElementById(id);
+/* 売れるまでの期間の区切り。rate = その期間に売れたとき、純利益を何%取れるか */
+const BUCKETS = [
+  {lo:1,   hi:30,  label:"〜1ヶ月"},
+  {lo:31,  hi:60,  label:"1〜2ヶ月"},
+  {lo:61,  hi:90,  label:"2〜3ヶ月"},
+  {lo:91,  hi:120, label:"3〜4ヶ月"},
+  {lo:121, hi:180, label:"4〜6ヶ月"},
+  {lo:181, hi:270, label:"6〜9ヶ月"},
+  {lo:271, hi:360, label:"9〜12ヶ月"},
+  {lo:361, hi:540, label:"12ヶ月以降"},   // 12〜18ヶ月を代表区間として計算
+];
+const NB = BUCKETS.length, MAXK = 540;
+const TIDS = BUCKETS.map((_,i)=>"t"+i), RIDS = BUCKETS.map((_,i)=>"r"+i);
+const IDS = ["p_qty","p_cost","p_profit","p_cap","p_months", ...TIDS, ...RIDS, "t_dead",
+             "e0","e1","e2","e3","e_un","e_cost","e_profit","l_rate","c_list","c_ai","c_fx","c_fixed",
+             "st_trips","st_qty","st_cost","st_profit","st_rent"];
+const DEFAULTS = {
+             p_qty:2,p_cost:10000,p_profit:3500,p_cap:1000000,p_months:18,
+             t0:55,t1:17,t2:11,t3:4,t4:5,t5:3,t6:3,t7:2,t_dead:0,
+             r0:100,r1:100,r2:100,r3:100,r4:0,r5:0,r6:100,r7:100,
+             e0:42,e1:32,e2:27,e3:15,e_un:48,e_cost:5600,e_profit:2500,
+             l_rate:4,c_list:550,c_ai:2,c_fx:153.6,c_fixed:0,
+             st_trips:1,st_qty:14,st_cost:4000,st_profit:3000,st_rent:5500};
+const AGES = [15,45,75,105];   // 既存在庫バケットの代表経過日数
+
+const yen  = n => (Math.round(n) < 0 ? "−" : "") + "¥" + Math.abs(Math.round(n)).toLocaleString("ja-JP");
+const man  = n => { const v = n/10000; return (Math.abs(v)>=100 ? Math.round(v) : Math.round(v*10)/10).toLocaleString("ja-JP") + "万"; };
+const pts  = n => (Math.round(n*10)/10).toLocaleString("ja-JP");
+
+/* ---------------- model ---------------- */
+function read(){
+  const v = {};
+  IDS.forEach(k => { const x = parseFloat($(k).value); v[k] = isFinite(x) ? x : DEFAULTS[k]; });
+  v.p_months = Math.max(1, Math.min(36, Math.round(v.p_months)));
+  return v;
+}
+/* stopDay: この日を最後に仕入を止める（既定=止めない）。tail: 停止後に追う日数 */
+function simulate(v, stopDay, tail){
+  const raw = TIDS.map(id => Math.max(0, v[id]));
+  const rate = BUCKETS.map((_,i) => Math.max(0, v["r"+i])/100);   // 純利益の適用率
+  const leftover = Math.max(0, v.t_dead);
+  let tot = raw.reduce((a,b)=>a+b,0) + leftover;
+  if (tot <= 0) { raw[0] = 100; tot = 100; }
+  const share = raw.map(x => x/tot);
+
+  // p[k] = k日目に売れる確率、pr[k] = そのとき取れる純利益の比率
+  const p = new Array(MAXK+1).fill(0), pr = new Array(MAXK+1).fill(0);
+  BUCKETS.forEach((b,i) => {
+    const n = b.hi - b.lo + 1;
+    for (let k=b.lo; k<=b.hi; k++){ p[k] += share[i]/n; pr[k] = rate[i]; }
+  });
+  let holdSum = 0, sellFrac = 0, pwFrac = 0;
+  for (let k=1; k<=MAXK; k++){ holdSum += k*p[k]; sellFrac += p[k]; pwFrac += p[k]*pr[k]; }
+  const avgHold = sellFrac > 0 ? holdSum/sellFrac : 0;
+
+  const STOP = stopDay || Infinity;
+  const DAYS = tail ? Math.min(stopDay, v.p_months*30) + tail : v.p_months*30;
+  const leftShare = leftover/tot;          // 最後まで売れない割合
+
+  /* --- すでに抱えている在庫（仕入代金は支払済＝現金流出なし） --- */
+  const eQty = [v.e0,v.e1,v.e2,v.e3].map(x => Math.max(0,x));
+  const eTotal = eQty.reduce((a,b)=>a+b,0);
+  const eSold = new Array(DAYS+2).fill(0), eSoldPw = new Array(DAYS+2).fill(0);
+  let eDead = 0;
+  eQty.forEach((n,i) => {
+    if (n <= 0) return;
+    const a = AGES[i];
+    let rem = leftShare;                              // 生き残っている確率質量
+    for (let k=a+1; k<=MAXK; k++) rem += p[k];
+    if (rem <= 1e-9){ eDead += n; return; }           // 分布上もう売れない＝滞留在庫
+    for (let k=a+1; k<=MAXK; k++){
+      const day = k-a;
+      if (day <= DAYS){ eSold[day] += n*p[k]/rem; eSoldPw[day] += n*p[k]*pr[k]/rem; }
+    }
+    eDead += n*leftShare/rem;
+  });
+  const eSoldTotal = eSold.reduce((a,b)=>a+b,0);
+  const eSoldPwTotal = eSoldPw.reduce((a,b)=>a+b,0);
+
+  /* --- 店舗仕入れ（週◯回のまとめ買い） --- */
+  const stTrips = Math.max(0, v.st_trips), stQty = Math.max(0, v.st_qty);
+  const stCost  = Math.max(0, v.st_cost), stProf = v.st_profit, stRent = Math.max(0, v.st_rent);
+  const stBuy = new Array(DAYS+2).fill(0), stRentD = new Array(DAYS+2).fill(0);
+  let stTripCount = 0;
+  if (stTrips > 0 && stQty > 0){
+    const gap = 7/stTrips;
+    for (let n=0; ; n++){
+      const t = Math.round(1 + n*gap);
+      if (t > DAYS || t > STOP) break;
+      stTripCount++;
+      stBuy[t] += stQty; stRentD[t] += stRent;
+    }
+  }
+  const stPerDay = stTrips*stQty/7;            // 日換算の店舗仕入点数
+
+  /* --- 出品待ち行列 ---------------------------------------------------
+     仕入れてもすぐには出品できない。1日の出品数を上限に、古いものから
+     順に出品していく。回転率の時計は「出品日」から動き始める。          */
+  const listCap = Math.max(0, v.l_rate);
+  const noCap   = listCap <= 0;                // 0 = 制限なし（仕入れた日に出品）
+  const eUn     = Math.max(0, v.e_un);         // 未出品の在庫
+  const sold   = [new Array(DAYS+2).fill(0), new Array(DAYS+2).fill(0), new Array(DAYS+2).fill(0)];
+  const soldPw = [new Array(DAYS+2).fill(0), new Array(DAYS+2).fill(0), new Array(DAYS+2).fill(0)];
+  const listedD = new Array(DAYS+2).fill(0);   // その日の出品点数
+  const backlog = new Array(DAYS+2).fill(0);   // その日の終わりの未出品在庫
+  const queue = [];                            // {q, ch} 0=電脳 1=店舗 2=既存未出品
+  if (eUn > 0) queue.push({q:eUn, ch:2});
+  let listedTotal = 0, backlogPeak = eUn, backlogPeakDay = 0;
+  for (let d=1; d<=DAYS; d++){
+    if (d <= STOP){
+      if (v.p_qty > 0)  queue.push({q:v.p_qty, ch:0});
+      if (stBuy[d] > 0) queue.push({q:stBuy[d], ch:1});
+    }
+    let room = noCap ? Infinity : listCap;
+    while (room > 1e-9 && queue.length){
+      const head = queue[0];
+      const take = Math.min(head.q, room);
+      head.q -= take; room -= take;
+      if (head.q <= 1e-9) queue.shift();
+      listedD[d] += take; listedTotal += take;
+      const sA = sold[head.ch], pA = soldPw[head.ch];
+      for (let k=1; k<=MAXK && d+k<=DAYS; k++){ sA[d+k] += take*p[k]; pA[d+k] += take*p[k]*pr[k]; }
+    }
+    let q = 0; for (const e of queue) q += e.q;
+    backlog[d] = q;
+    if (q > backlogPeak){ backlogPeak = q; backlogPeakDay = d; }
+  }
+  const backlogEnd = backlog[DAYS];
+  const listWait = listCap > 0 ? backlog[Math.min(DAYS, v.p_months*30)]/listCap : 0;  // 待ち日数の目安
+
+  /* --- コスト --- */
+  const listFee   = Math.max(0, v.c_list);                                   // 出品1点あたり外注費
+  const aiDaily   = Math.max(0, v.c_ai) * Math.max(0, v.c_fx);               // AIツール(日額)
+  const otherDay  = Math.max(0, v.c_fixed)/30;                               // その他固定費(月→日)
+  const rentDay   = stRent*stTrips/7;                                        // レンタカー(日換算)
+  const fixedDay  = aiDaily + otherDay;                                      // 点数にも回数にも依らない日額
+  const contrib   = v.p_profit - listFee;                                    // 電脳 1点あたり貢献利益
+  const stContrib = stProf - listFee;                                        // 店舗 1点あたり貢献利益
+  const blendQty  = v.p_qty + stPerDay;
+  const blendContrib = blendQty > 0 ? (v.p_qty*contrib + stPerDay*stContrib)/blendQty : 0;
+
+  const eCost = Math.max(0, v.e_cost);
+  const rows = [];
+  let cash = v.p_cap, invNew = 0, invOld = eTotal, invSt = 0, invUn = eUn, gross = 0, spent = 0,
+      min = Infinity, minDay = 1, posDay = null;
+  for (let d=1; d<=DAYS; d++){
+    const s = sold[0][d], ss = sold[1][d], su = sold[2][d], es = eSold[d];
+    // 損切りした分は原価だけ戻り、利益は乗らない
+    const gp = soldPw[0][d]*v.p_profit + soldPw[1][d]*stProf
+             + soldPw[2][d]*v.e_profit + eSoldPw[d]*v.e_profit;
+    const recv = s*v.p_cost + ss*stCost + (su+es)*eCost + gp;
+    const on = d <= STOP;                                    // まだ仕入れている日か
+    const pQ = on ? v.p_qty : 0;
+    const buyQtyD = pQ + stBuy[d];
+    // 外注費は「出品した日」に発生。停止後もバックログを捌く間はかかり続ける。
+    // レンタカーとAIツールは仕入れをやめた時点で消える。
+    const costD = listedD[d]*listFee + (on ? stRentD[d] + fixedDay : otherDay);
+    cash += recv - pQ*v.p_cost - stBuy[d]*stCost - costD;
+    invNew += pQ - s;
+    invSt  += stBuy[d] - ss;
+    invOld -= es;
+    invUn  -= su;
+    gross += gp;
+    spent += costD;
+    const cum = gross - spent;
+    const inv = invNew + invOld + invSt + invUn;
+    const invAmt = invNew*v.p_cost + invSt*stCost + (invOld+invUn)*eCost;
+    const cut = (s - soldPw[0][d]) + (ss - soldPw[1][d])
+              + (su - soldPw[2][d]) + (es - eSoldPw[d]);     // 利益ゼロで捌けた点数
+    if (cash < min){ min = cash; minDay = d; }
+    if (posDay === null && d > 5 && cash >= v.p_cap) posDay = d;
+    rows.push({d, sold:s+es+ss+su, soldNew:s, soldOld:es+su, soldSt:ss, cut, recv, cash,
+      inv, invNew, invOld:invOld+invUn, invSt, invAmt, unlisted:backlog[d], listed:listedD[d],
+      buyQty:buyQtyD, buyAmt:pQ*v.p_cost + stBuy[d]*stCost, cost:costD,
+      gross, spent, cum, asset:cash+invAmt});
+  }
+  const months = [];
+  for (let m=1; m<=Math.floor(DAYS/30); m++){
+    const seg = rows.slice((m-1)*30, m*30);
+    if (!seg.length) break;
+    const last = seg[seg.length-1];
+    const sum = f => seg.reduce((a,r)=>a+f(r),0);
+    const sq = sum(r=>r.soldNew), sqo = sum(r=>r.soldOld), sqs = sum(r=>r.soldSt);
+    const gpAcc = last.gross - (m > 1 ? rows[(m-1)*30-1].gross : 0);
+    const cst = sum(r=>r.cost);
+    months.push({m, buyQty:sum(r=>r.buyQty), buyAmt:sum(r=>r.buyAmt),
+      listedQty:sum(r=>r.listed), unlisted:last.unlisted,
+      soldQty:sq+sqo+sqs, soldOld:sqo, soldSt:sqs, cutQty:sum(r=>r.cut),
+      recv:sum(r=>r.recv),
+      grossProfit:gpAcc, cost:cst, profit:gpAcc - cst,
+      invQty:last.inv, invAmt:last.invAmt, cash:last.cash, cum:last.cum, asset:last.asset});
+  }
+  /* --- 定常時の月次（チャネル別） --- */
+  const ch = [
+    {key:"電脳", color:"var(--s1)", qty:v.p_qty*30, cost:v.p_qty*30*v.p_cost,
+     gross:v.p_qty*30*v.p_profit*pwFrac, direct:v.p_qty*30*listFee, unit:v.p_cost, profitPer:v.p_profit,
+     detail:`${pts(v.p_qty)}点/日 × 30日`},
+    {key:"店舗", color:"var(--s2)", qty:stPerDay*30, cost:stPerDay*30*stCost,
+     gross:stPerDay*30*stProf*pwFrac, direct:stPerDay*30*listFee + rentDay*30, unit:stCost, profitPer:stProf,
+     detail:`${pts(stQty)}点 × 週${pts(stTrips)}回`},
+  ].filter(c => c.qty > 0);
+  ch.forEach(c => { c.contrib = c.gross - c.direct; });
+
+  const steadyGross   = ch.reduce((a,c)=>a+c.gross,0);
+  const steadyDirect  = ch.reduce((a,c)=>a+c.direct,0);
+  const steadyCost    = steadyDirect + fixedDay*30;
+  const steadyMonthly = steadyGross - steadyCost;
+  const rampMonth = (months.find(m => m.profit >= steadyMonthly*0.97) || {}).m || null;
+  const beQty = blendContrib > 0 ? (fixedDay*30 + rentDay*30)/blendContrib : Infinity;
+  const steadyInvQty = blendQty*holdSum;
+  const steadyInvAmt = (v.p_qty*v.p_cost + stPerDay*stCost)*holdSum;
+  const cutFrac = sellFrac - pwFrac;                  // 利益ゼロで捌ける割合（適用率100%基準）
+  return {v, rows, months, avgHold, share, rate, leftover:leftShare, sellFrac, pwFrac, cutFrac, ch,
+    listFee, aiDaily, otherDay, fixedDay, rentDay, contrib, stContrib, blendQty, blendContrib, beQty,
+    stTrips, stQty, stCost, stProf, stRent, stPerDay, stTripCount,
+    listCap, noCap, eUn, backlogPeak, backlogPeakDay, backlogEnd, listWait, listedTotal,
+    steadyGross, steadyDirect, steadyCost, steadyInvAmt,
+    mListFee:blendQty*listFee*30, mAi:aiDaily*30, mOther:otherDay*30, mRent:rentDay*30,
+    eTotal, eAmt: eTotal*eCost, eDead, eSoldTotal,
+    eRecv: eSoldTotal*eCost + eSoldPwTotal*v.e_profit,
+    min, minDay, posDay, need: Math.max(0, v.p_cap - min), rampMonth,
+    steadyInvQty, steadyMonthly,
+    last: rows[rows.length-1], DAYS};
+}
+
+/* ---------------- svg helpers ---------------- */
+const NS = "http://www.w3.org/2000/svg";
+function el(n, a){ const e = document.createElementNS(NS,n); for(const k in a) e.setAttribute(k,a[k]); return e; }
+function niceTicks(lo, hi, n){
+  const span = (hi-lo)||1, raw = span/n, mag = Math.pow(10, Math.floor(Math.log10(raw)));
+  const step = [1,2,2.5,5,10].map(m=>m*mag).find(s=>s>=raw) || 10*mag;
+  const out = []; for (let t = Math.ceil(lo/step)*step; t <= hi+1e-6; t += step) out.push(t);
+  return out;
+}
+
+const charts = [];
+function register(hostId, draw){ charts.push({host:$(hostId), draw}); }
+function renderCharts(S){
+  charts.forEach(c => {
+    const w = Math.max(300, c.host.clientWidth);
+    const old = c.host.querySelector("svg"); if (old) old.remove();
+    c.host.insertBefore(c.draw(S, w), c.host.firstChild);
+  });
+}
+
+function showTip(tip, host, x, y, html){
+  tip.innerHTML = html; tip.style.opacity = 1;
+  const w = tip.offsetWidth, hw = host.clientWidth;
+  tip.style.left = Math.max(2, Math.min(hw - w - 2, x - w/2)) + "px";
+  tip.style.top  = Math.max(2, y - tip.offsetHeight - 12) + "px";
+}
+
+/* ---------------- chart 1: cash ---------------- */
+register("h_cash", (S, W) => {
+  const H = Math.max(230, Math.min(320, W*0.36));
+  const M = {t:14, r:30, b:28, l:W<480?44:56};
+  const iw = W-M.l-M.r, ih = H-M.t-M.b;
+  const svg = el("svg",{viewBox:`0 0 ${W} ${H}`, height:H, role:"img","aria-label":"手元現金と総資産の日次推移"});
+  const rows = S.rows;
+  const lo = Math.min(0, S.min), hi = Math.max(...rows.map(r=>r.asset))*1.05;
+  const ticks = niceTicks(lo, hi, 5);
+  const y0 = Math.min(lo, ticks[0]), y1 = Math.max(hi, ticks[ticks.length-1]);
+  const X = d => M.l + (d-1)/(S.DAYS-1)*iw;
+  const Y = v => M.t + ih - (v-y0)/((y1-y0)||1)*ih;
+
+  ticks.forEach(t => {
+    svg.appendChild(el("line",{x1:M.l,x2:M.l+iw,y1:Y(t),y2:Y(t),stroke:"var(--line-2)","stroke-width":1}));
+    const tx = el("text",{x:M.l-8,y:Y(t)+4,"text-anchor":"end",fill:"var(--ink-3)","font-size":10.5,"font-family":"var(--mono)"});
+    tx.textContent = t === 0 ? "0" : man(t); svg.appendChild(tx);
+  });
+  if (y0 < 0) svg.appendChild(el("line",{x1:M.l,x2:M.l+iw,y1:Y(0),y2:Y(0),stroke:"var(--danger)","stroke-width":1.5,"stroke-dasharray":"4 3",opacity:.75}));
+
+  const path = key => rows.map((r,i)=>(i?"L":"M")+X(r.d).toFixed(1)+" "+Y(r[key]).toFixed(1)).join(" ");
+  const area = path("cash") + ` L ${X(S.DAYS).toFixed(1)} ${Y(Math.max(0,y0)).toFixed(1)} L ${M.l} ${Y(Math.max(0,y0)).toFixed(1)} Z`;
+  svg.appendChild(el("path",{d:area, fill:"var(--s1-soft)", stroke:"none"}));
+  svg.appendChild(el("path",{d:path("asset"), fill:"none", stroke:"var(--s3)","stroke-width":2,"stroke-linejoin":"round"}));
+  svg.appendChild(el("path",{d:path("cash"),  fill:"none", stroke:"var(--s1)","stroke-width":2.4,"stroke-linejoin":"round"}));
+
+  // trough marker
+  const mr = rows[S.minDay-1];
+  svg.appendChild(el("line",{x1:X(mr.d),x2:X(mr.d),y1:M.t,y2:M.t+ih,stroke:"var(--s1)","stroke-width":1,"stroke-dasharray":"3 3",opacity:.4}));
+  svg.appendChild(el("circle",{cx:X(mr.d),cy:Y(mr.cash),r:5,fill:"var(--s1)",stroke:"var(--surface)","stroke-width":2}));
+  const anchor = X(mr.d) > M.l+iw*0.62 ? "end" : "start";
+  const ox = anchor === "end" ? -10 : 10;
+  const lab = el("text",{x:X(mr.d)+ox, y:Y(mr.cash)+(Y(mr.cash) > M.t+ih*0.45 ? -13 : 20), "text-anchor":anchor,
+    fill:"var(--ink-2)","font-size":11,"font-weight":700,"font-family":"var(--mono)"});
+  lab.textContent = `最低 ${yen(mr.cash)} · ${mr.d}日目`;
+  svg.appendChild(lab);
+
+  const step = S.DAYS > 400 ? 90 : 60;
+  for (let d = step; d <= S.DAYS; d += step){
+    const tx = el("text",{x:X(d),y:H-9,"text-anchor":"middle",fill:"var(--ink-3)","font-size":10.5,"font-family":"var(--mono)"});
+    tx.textContent = (d/30) + "ヶ月"; svg.appendChild(tx);
+  }
+
+  const host = $("h_cash"), tip = $("tip_cash");
+  const cross = el("line",{x1:0,x2:0,y1:M.t,y2:M.t+ih,stroke:"var(--ink-3)","stroke-width":1,opacity:0});
+  const dot1 = el("circle",{r:4,fill:"var(--s1)",stroke:"var(--surface)","stroke-width":1.5,opacity:0});
+  const dot2 = el("circle",{r:4,fill:"var(--s3)",stroke:"var(--surface)","stroke-width":1.5,opacity:0});
+  svg.append(cross, dot1, dot2);
+  const hit = el("rect",{x:M.l,y:M.t,width:iw,height:ih,fill:"transparent"});
+  svg.appendChild(hit);
+  const sc = () => W / svg.getBoundingClientRect().width;
+  hit.addEventListener("pointermove", e => {
+    const b = svg.getBoundingClientRect(), px = (e.clientX-b.left)*sc();
+    const d = Math.max(1, Math.min(S.DAYS, Math.round((px-M.l)/iw*(S.DAYS-1))+1));
+    const r = rows[d-1];
+    [cross,dot1,dot2].forEach(n=>n.setAttribute("opacity",1));
+    cross.setAttribute("x1",X(r.d)); cross.setAttribute("x2",X(r.d));
+    dot1.setAttribute("cx",X(r.d)); dot1.setAttribute("cy",Y(r.cash));
+    dot2.setAttribute("cx",X(r.d)); dot2.setAttribute("cy",Y(r.asset));
+    showTip(tip, host, X(r.d)/sc(), Y(r.cash)/sc(), `
+      <div class="th">${r.d}日目（${(r.d/30).toFixed(1)}ヶ月）</div>
+      <div class="tr"><span><i style="background:var(--s1)"></i>手元現金</span><span>${yen(r.cash)}</span></div>
+      <div class="tr"><span><i style="background:var(--s3)"></i>総資産</span><span>${yen(r.asset)}</span></div>
+      <div class="tr"><span style="color:var(--ink-3)">うち在庫</span><span style="color:var(--ink-2)">${yen(r.invAmt)}</span></div>`);
+  });
+  hit.addEventListener("pointerleave", () => { tip.style.opacity = 0; [cross,dot1,dot2].forEach(n=>n.setAttribute("opacity",0)); });
+  return svg;
+});
+
+/* ---------------- chart 2: monthly profit ---------------- */
+register("h_profit", (S, W) => {
+  const H = Math.max(220, Math.min(290, W*0.31));
+  const M = {t:18, r:14, b:28, l:W<480?44:56};
+  const iw = W-M.l-M.r, ih = H-M.t-M.b;
+  const svg = el("svg",{viewBox:`0 0 ${W} ${H}`, height:H, role:"img","aria-label":"月別の純利益"});
+  const ms = S.months;
+  const hi = Math.max(...ms.map(m=>Math.max(m.grossProfit, m.profit)), 1);
+  const lo = Math.min(0, ...ms.map(m=>m.profit));
+  const ticks = niceTicks(lo, hi, 4);
+  const y0 = Math.min(lo, ticks[0]), y1 = Math.max(hi, ticks[ticks.length-1]);
+  const Y = v => M.t + ih - (v-y0)/((y1-y0)||1)*ih;
+  ticks.forEach(t => {
+    svg.appendChild(el("line",{x1:M.l,x2:M.l+iw,y1:Y(t),y2:Y(t),
+      stroke: t===0 ? "var(--line)" : "var(--line-2)","stroke-width": t===0 ? 1.5 : 1}));
+    const tx = el("text",{x:M.l-8,y:Y(t)+4,"text-anchor":"end",fill:"var(--ink-3)","font-size":10.5,"font-family":"var(--mono)"});
+    tx.textContent = t===0 ? "0" : man(t); svg.appendChild(tx);
+  });
+  const slot = iw/ms.length, bw = Math.max(6, Math.min(46, slot-8));
+  const host = $("h_profit"), tip = $("tip_profit");
+  const sc = () => W / svg.getBoundingClientRect().width;
+  const zero = Y(0);
+  ms.forEach((m,i) => {
+    const x = M.l + slot*i + (slot-bw)/2;
+    // 商品粗利：枠線だけのゴーストバー（実バーとの差が経費）
+    const gy = Y(Math.max(m.grossProfit,0)), gh = Math.max(1, zero-gy);
+    svg.appendChild(el("rect",{x:x-2, y:gy, width:bw+4, height:gh, rx:3, fill:"none",
+      stroke:"var(--s2)","stroke-width":1.2,"stroke-dasharray":"3 2",opacity:.55}));
+    // 営業利益：実バー（マイナスは下方向）
+    const py = m.profit >= 0 ? Y(m.profit) : zero;
+    const ph = Math.max(1.5, Math.abs(Y(m.profit)-zero));
+    const bar = el("rect",{x, y:py, width:bw, height:ph, rx:Math.min(4,bw/2),
+      fill: m.profit < 0 ? "var(--danger)" : "var(--s2)"});
+    svg.appendChild(bar);
+    if (slot > 34 || i === ms.length-1 || i === 0){
+      const above = m.profit >= 0;
+      const tx = el("text",{x:x+bw/2, y: above ? Y(m.profit)-7 : Y(m.profit)+14, "text-anchor":"middle",
+        fill: m.profit<0 ? "var(--danger)" : "var(--ink-2)","font-size":10.5,"font-weight":600,"font-family":"var(--mono)"});
+      tx.textContent = man(m.profit); svg.appendChild(tx);
+    }
+    const hit = el("rect",{x:M.l+slot*i, y:M.t, width:slot, height:ih, fill:"transparent"});
+    hit.addEventListener("pointerenter", () => {
+      bar.setAttribute("opacity",.75);
+      showTip(tip, host, (x+bw/2)/sc(), Math.min(gy,py)/sc(), `
+        <div class="th">${m.m}ヶ月目</div>
+        <div class="tr"><span style="color:var(--ink-3)">商品粗利</span><span style="color:var(--ink-2)">${yen(m.grossProfit)}</span></div>
+        <div class="tr"><span style="color:var(--danger)">諸経費</span><span style="color:var(--danger)">−${yen(m.cost)}</span></div>
+        <div class="tr"><span><i style="background:${m.profit<0?"var(--danger)":"var(--s2)"}"></i>営業利益</span><span>${yen(m.profit)}</span></div>
+        <div class="tr"><span style="color:var(--ink-3)">売却点数</span><span style="color:var(--ink-2)">${pts(m.soldQty)} 点</span></div>
+        <div class="tr"><span style="color:var(--ink-3)">累計営業利益</span><span style="color:var(--ink-2)">${yen(m.cum)}</span></div>`);
+    });
+    hit.addEventListener("pointerleave", () => { bar.setAttribute("opacity",1); tip.style.opacity = 0; });
+    svg.appendChild(hit);
+    const lx = el("text",{x:M.l+slot*i+slot/2, y:H-9, "text-anchor":"middle", fill:"var(--ink-3)","font-size":10.5,"font-family":"var(--mono)"});
+    if (slot > 26 || (i+1) % 2 === 0) lx.textContent = m.m;
+    svg.appendChild(lx);
+  });
+  return svg;
+});
+
+/* ---------------- chart 3: inventory ---------------- */
+register("h_inv", (S, W) => {
+  const H = Math.max(200, Math.min(270, W*0.28));
+  const M = {t:14, r:30, b:28, l:W<480?40:50};
+  const iw = W-M.l-M.r, ih = H-M.t-M.b;
+  const svg = el("svg",{viewBox:`0 0 ${W} ${H}`, height:H, role:"img","aria-label":"保有在庫の推移"});
+  const rows = S.rows, hi = Math.max(...rows.map(r=>r.inv), 1);
+  const ticks = niceTicks(0, hi, 4), y1 = Math.max(hi, ticks[ticks.length-1]);
+  const X = d => M.l + (d-1)/(S.DAYS-1)*iw;
+  const Y = v => M.t + ih - v/y1*ih;
+  ticks.forEach(t => {
+    svg.appendChild(el("line",{x1:M.l,x2:M.l+iw,y1:Y(t),y2:Y(t),stroke:"var(--line-2)","stroke-width":1}));
+    const tx = el("text",{x:M.l-8,y:Y(t)+4,"text-anchor":"end",fill:"var(--ink-3)","font-size":10.5,"font-family":"var(--mono)"});
+    tx.textContent = Math.round(t); svg.appendChild(tx);
+  });
+  const line = rows.map((r,i)=>(i?"L":"M")+X(r.d).toFixed(1)+" "+Y(r.inv).toFixed(1)).join(" ");
+  svg.appendChild(el("path",{d:line+` L ${X(S.DAYS).toFixed(1)} ${Y(0)} L ${M.l} ${Y(0)} Z`, fill:"var(--s3-soft)"}));
+  svg.appendChild(el("path",{d:line, fill:"none", stroke:"var(--s3)","stroke-width":2.2,"stroke-linejoin":"round"}));
+  if (S.backlogPeak > 0.5){
+    const un = rows.map((r,i)=>(i?"L":"M")+X(r.d).toFixed(1)+" "+Y(r.unlisted).toFixed(1)).join(" ");
+    svg.appendChild(el("path",{d:un, fill:"none", stroke:"var(--ink-2)","stroke-width":1.6,
+      "stroke-dasharray":"5 3","stroke-linejoin":"round"}));
+  }
+  const plateau = S.steadyInvQty + S.eDead;
+  if (plateau > 0 && plateau <= y1*1.02){
+    svg.appendChild(el("line",{x1:M.l,x2:M.l+iw,y1:Y(plateau),y2:Y(plateau),stroke:"var(--ink-3)","stroke-width":1,"stroke-dasharray":"5 4",opacity:.8}));
+    const tx = el("text",{x:M.l+5, y:Y(plateau)-7, "text-anchor":"start", fill:"var(--ink-2)","font-size":10.5,"font-weight":600,"font-family":"var(--mono)"});
+    tx.textContent = `定常在庫 ${pts(plateau)}点（${man(S.steadyInvAmt + S.eDead*Math.max(0,S.v.e_cost))}円）`; svg.appendChild(tx);
+  }
+  const step = S.DAYS > 400 ? 90 : 60;
+  for (let d = step; d <= S.DAYS; d += step){
+    const tx = el("text",{x:X(d),y:H-9,"text-anchor":"middle",fill:"var(--ink-3)","font-size":10.5,"font-family":"var(--mono)"});
+    tx.textContent = (d/30) + "ヶ月"; svg.appendChild(tx);
+  }
+  const host = $("h_inv"), tip = $("tip_inv");
+  const cross = el("line",{x1:0,x2:0,y1:M.t,y2:M.t+ih,stroke:"var(--ink-3)","stroke-width":1,opacity:0});
+  const dot = el("circle",{r:4,fill:"var(--s3)",stroke:"var(--surface)","stroke-width":1.5,opacity:0});
+  svg.append(cross, dot);
+  const hit = el("rect",{x:M.l,y:M.t,width:iw,height:ih,fill:"transparent"});
+  svg.appendChild(hit);
+  const sc = () => W / svg.getBoundingClientRect().width;
+  hit.addEventListener("pointermove", e => {
+    const b = svg.getBoundingClientRect(), px = (e.clientX-b.left)*sc();
+    const d = Math.max(1, Math.min(S.DAYS, Math.round((px-M.l)/iw*(S.DAYS-1))+1));
+    const r = rows[d-1];
+    cross.setAttribute("opacity",1); dot.setAttribute("opacity",1);
+    cross.setAttribute("x1",X(r.d)); cross.setAttribute("x2",X(r.d));
+    dot.setAttribute("cx",X(r.d)); dot.setAttribute("cy",Y(r.inv));
+    showTip(tip, host, X(r.d)/sc(), Y(r.inv)/sc(), `
+      <div class="th">${r.d}日目（${(r.d/30).toFixed(1)}ヶ月）</div>
+      <div class="tr"><span><i style="background:var(--s3)"></i>在庫点数</span><span>${pts(r.inv)} 点</span></div>
+      <div class="tr"><span style="color:var(--ink-3)">うち電脳 / 店舗</span><span style="color:var(--ink-2)">${pts(r.invNew)} / ${pts(r.invSt)} 点</span></div>
+      ${S.backlogPeak>0.5?`<div class="tr"><span style="color:var(--ink-3)">うち未出品</span><span style="color:var(--ink-2)">${pts(r.unlisted)} 点</span></div>`:""}
+      ${S.eTotal>0?`<div class="tr"><span style="color:var(--ink-3)">うち既存在庫</span><span style="color:var(--ink-2)">${pts(r.invOld)} 点</span></div>`:""}
+      <div class="tr"><span style="color:var(--ink-3)">在庫金額</span><span style="color:var(--ink-2)">${yen(r.invAmt)}</span></div>`);
+  });
+  hit.addEventListener("pointerleave", () => { tip.style.opacity = 0; cross.setAttribute("opacity",0); dot.setAttribute("opacity",0); });
+  return svg;
+});
+
+/* ---------------- chart 4: wind-down ---------------- */
+register("h_wind", (S, W) => {
+  const D = S.wd, rows = D.rows;
+  const H = Math.max(240, Math.min(330, W*0.37));
+  const M = {t:16, r:30, b:28, l:W<480?44:56};
+  const iw = W-M.l-M.r, ih = H-M.t-M.b;
+  const svg = el("svg",{viewBox:`0 0 ${W} ${H}`, height:H, role:"img","aria-label":"仕入停止後に在庫が現金化される推移"});
+  const d0 = D.from, d1 = D.to;
+  const hi = Math.max(...rows.map(r=>Math.max(r.asset, r.cash, r.invAmt)))*1.06;
+  const lo = Math.min(0, ...rows.map(r=>r.cash));
+  const ticks = niceTicks(lo, hi, 5);
+  const y0 = Math.min(lo, ticks[0]), y1 = Math.max(hi, ticks[ticks.length-1]);
+  const X = d => M.l + (d-d0)/((d1-d0)||1)*iw;
+  const Y = val => M.t + ih - (val-y0)/((y1-y0)||1)*ih;
+
+  ticks.forEach(t => {
+    svg.appendChild(el("line",{x1:M.l,x2:M.l+iw,y1:Y(t),y2:Y(t),
+      stroke: t===0 ? "var(--line)" : "var(--line-2)","stroke-width": t===0 ? 1.5 : 1}));
+    const tx = el("text",{x:M.l-8,y:Y(t)+4,"text-anchor":"end",fill:"var(--ink-3)","font-size":10.5,"font-family":"var(--mono)"});
+    tx.textContent = t===0 ? "0" : man(t); svg.appendChild(tx);
+  });
+
+  const path = key => rows.map((r,i)=>(i?"L":"M")+X(r.d).toFixed(1)+" "+Y(r[key]).toFixed(1)).join(" ");
+  svg.appendChild(el("path",{d:path("invAmt")+` L ${X(d1).toFixed(1)} ${Y(Math.max(0,y0))} L ${X(d0).toFixed(1)} ${Y(Math.max(0,y0))} Z`,
+    fill:"var(--s3-soft)", stroke:"none"}));
+  svg.appendChild(el("path",{d:path("asset"),  fill:"none", stroke:"var(--s2)","stroke-width":2,"stroke-dasharray":"5 3","stroke-linejoin":"round"}));
+  svg.appendChild(el("path",{d:path("invAmt"), fill:"none", stroke:"var(--s3)","stroke-width":2.4,"stroke-linejoin":"round"}));
+  svg.appendChild(el("path",{d:path("cash"),   fill:"none", stroke:"var(--s1)","stroke-width":2.4,"stroke-linejoin":"round"}));
+
+  svg.appendChild(el("line",{x1:X(D.stop),x2:X(D.stop),y1:M.t-2,y2:M.t+ih,stroke:"var(--ink-2)","stroke-width":1.5,"stroke-dasharray":"4 3"}));
+  const sl = el("text",{x:X(D.stop)+7, y:M.t+10, fill:"var(--ink-2)","font-size":10.5,"font-weight":700});
+  sl.textContent = `仕入停止（${D.stopMonth}ヶ月目末）`; svg.appendChild(sl);
+
+  if (D.crossDay){
+    const cr = rows[D.crossDay-d0];
+    if (cr){
+      svg.appendChild(el("circle",{cx:X(cr.d),cy:Y(cr.cash),r:5,fill:"var(--s1)",stroke:"var(--surface)","stroke-width":2}));
+      const lab = el("text",{x:X(cr.d)+9, y:Y(cr.cash)-9, fill:"var(--ink-2)","font-size":10.5,"font-weight":700,"font-family":"var(--mono)"});
+      lab.textContent = `現金が在庫を追い越す（停止${cr.d-D.stop}日後）`;
+      if (X(cr.d) > M.l+iw*0.55){ lab.setAttribute("x", X(cr.d)-9); lab.setAttribute("text-anchor","end"); }
+      svg.appendChild(lab);
+    }
+  }
+
+  const step = (d1-d0) > 300 ? 60 : 30;
+  for (let d = Math.ceil(d0/step)*step; d <= d1; d += step){
+    const tx = el("text",{x:X(d),y:H-9,"text-anchor":"middle",fill:"var(--ink-3)","font-size":10.5,"font-family":"var(--mono)"});
+    tx.textContent = (d/30).toFixed(0)+"ヶ月"; svg.appendChild(tx);
+  }
+
+  const host = $("h_wind"), tip = $("tip_wind");
+  const cross = el("line",{x1:0,x2:0,y1:M.t,y2:M.t+ih,stroke:"var(--ink-3)","stroke-width":1,opacity:0});
+  const dots = [el("circle",{r:4,fill:"var(--s3)",stroke:"var(--surface)","stroke-width":1.5,opacity:0}),
+                el("circle",{r:4,fill:"var(--s1)",stroke:"var(--surface)","stroke-width":1.5,opacity:0})];
+  svg.append(cross, ...dots);
+  const hit = el("rect",{x:M.l,y:M.t,width:iw,height:ih,fill:"transparent"});
+  svg.appendChild(hit);
+  const sc = () => W / svg.getBoundingClientRect().width;
+  hit.addEventListener("pointermove", e => {
+    const b = svg.getBoundingClientRect(), px = (e.clientX-b.left)*sc();
+    const d = Math.max(d0, Math.min(d1, Math.round((px-M.l)/iw*(d1-d0))+d0));
+    const r = rows[d-d0]; if (!r) return;
+    cross.setAttribute("opacity",1); dots.forEach(n=>n.setAttribute("opacity",1));
+    cross.setAttribute("x1",X(r.d)); cross.setAttribute("x2",X(r.d));
+    dots[0].setAttribute("cx",X(r.d)); dots[0].setAttribute("cy",Y(r.invAmt));
+    dots[1].setAttribute("cx",X(r.d)); dots[1].setAttribute("cy",Y(r.cash));
+    const after = r.d - D.stop;
+    showTip(tip, host, X(r.d)/sc(), Math.min(Y(r.invAmt),Y(r.cash))/sc(), `
+      <div class="th">${(r.d/30).toFixed(1)}ヶ月目${after>0?`（停止${after}日後）`:""}</div>
+      <div class="tr"><span><i style="background:var(--s3)"></i>在庫金額</span><span>${yen(r.invAmt)}</span></div>
+      <div class="tr"><span><i style="background:var(--s1)"></i>手元現金</span><span>${yen(r.cash)}</span></div>
+      <div class="tr"><span><i style="background:var(--s2)"></i>総資産</span><span>${yen(r.asset)}</span></div>
+      <div class="tr"><span style="color:var(--ink-3)">残り在庫</span><span style="color:var(--ink-2)">${pts(r.inv)} 点</span></div>`);
+  });
+  hit.addEventListener("pointerleave", () => { tip.style.opacity=0; cross.setAttribute("opacity",0); dots.forEach(n=>n.setAttribute("opacity",0)); });
+  return svg;
+});
+
+/* ---------------- table + kpi ---------------- */
+function paint(S){
+  const v = S.v;
+  $("s_avg").textContent = S.avgHold.toFixed(1);
+  $("s_sum").textContent = "100";
+  $("hd_months").textContent = v.p_months;
+  $("hd_trips").textContent = pts(S.stTrips);
+  $("hd_hold").textContent = S.avgHold.toFixed(0);
+
+  /* 回転率テーブルの実効利益欄 */
+  BUCKETS.forEach((b,i) => {
+    const r = S.rate[i], cut = r <= 0.001, tr = $("t"+i).closest("tr");
+    tr.classList.toggle("cut", cut);
+    $("x"+i).textContent = cut ? "¥0 ／ ¥0"
+      : `${yen(v.p_profit*r)} ／ ${yen(S.stProf*r)}`;
+    $("n"+i).textContent = cut ? "損切り（原価のみ回収）"
+      : r < 0.999 ? `値下げして${(r*100).toFixed(0)}%を確保`
+      : `月の仕入のうち ${pts(S.blendQty*30*S.share[i])}点ぶんが該当`;
+  });
+  $("s_exist").innerHTML = (S.eTotal > 0
+    ? ` ／ 既存在庫 <b class="num" style="color:var(--s3)">${pts(S.eTotal)}</b>点（<b class="num" style="color:var(--s3)">${yen(S.eAmt)}</b>）を反映中`
+    : "")
+    + (S.noCap ? " ／ 出品制限なし（仕入日に出品）"
+       : ` ／ 出品 <b class="num" style="color:var(--ink)">${pts(S.listCap)}</b>点/日・未出品のピーク <b class="num" style="color:var(--ink)">${pts(S.backlogPeak)}</b>点`);
+
+  $("k_need").innerHTML = man(S.need) + "<small>円</small>";
+  $("k_need_s").textContent = `${S.minDay}日目に手元 ${yen(S.min)} まで下がります（初期資金 ${man(v.p_cap)}円）`
+    + (S.eTotal > 0 ? `。既存在庫の仕入代金 ${yen(S.eAmt)} は支出済みとして除いています` : "");
+  const steadyAmt = S.steadyInvAmt + S.eDead*Math.max(0,v.e_cost);
+  $("k_inv").innerHTML = pts(S.steadyInvQty + S.eDead) + "<small>点</small>";
+  $("k_inv_s").textContent = `約 ${yen(steadyAmt)} が常時在庫として寝ます`
+    + (S.eDead > 0.05 ? `（うち滞留在庫 ${pts(S.eDead)}点）` : "")
+    + (S.backlogPeak > 0.5 ? `。別に未出品が最大 ${pts(S.backlogPeak)}点` : "");
+  $("k_mp").innerHTML = man(S.steadyMonthly) + "<small>円</small>";
+  $("k_mp_s").textContent = `商品粗利 ${man(S.steadyGross)}円 − 諸経費 ${man(S.steadyCost)}円（仕入 ${pts(S.blendQty*30)}点/月）。`
+    + (S.rampMonth ? `満額は${S.rampMonth}ヶ月目から、` : "期間内に満額へは届かず、") + `年換算 ${man(S.steadyMonthly*12)}円`;
+
+  /* コスト構造 */
+  const parts = [
+    {k:"出品外注費", v:S.mListFee, c:"var(--danger)", d:`${yen(S.listFee)} × ${pts(S.blendQty*30)}点/月`},
+    {k:"レンタカー代", v:S.mRent, c:"var(--s1)", d:`${yen(S.stRent)} × 月${pts(S.stTrips*30/7)}回`},
+    {k:"AIリサーチツール", v:S.mAi, c:"var(--s2)", d:`$${v.c_ai}/日 × ${v.c_fx}円 × 30日`},
+    {k:"その他固定費", v:S.mOther, c:"var(--ink-3)", d:"保管費など"},
+  ].filter(p => p.v > 0);
+  const totalCost = parts.reduce((a,p)=>a+p.v,0);
+  $("costgrid").innerHTML = parts.map(p => `<div class="cc" style="--cc:${p.c}">
+      <div class="lbl">${p.k}</div><div class="amt">${yen(p.v)}</div><div class="det">${p.d}</div></div>`).join("")
+    + `<div class="cc total"><div class="lbl" style="--cc:var(--danger)">月間経費 合計</div>
+       <div class="amt">${yen(totalCost)}</div>
+       <div class="bar">${parts.map(p=>`<span style="background:${p.c};flex:${Math.max(p.v,0.0001)}"></span>`).join("")}</div></div>`
+    + `<div class="cc net"><div class="lbl" style="--cc:var(--s2)">差引・月間営業利益</div>
+       <div class="amt">${yen(S.steadyMonthly)}</div>
+       <div class="det">粗利の ${(S.steadyGross>0?S.steadyMonthly/S.steadyGross*100:0).toFixed(0)}% が手元に残ります</div></div>`;
+  $("costnote").innerHTML = (S.cutFrac > 0.0005
+      ? `<span style="color:var(--danger)">仕入のうち <b class="num">${(S.cutFrac*100).toFixed(1)}%</b>（月 ${pts(S.blendQty*30*S.cutFrac)}点）は損切り想定で、粗利に乗りません。</span> ` : "")
+    + `<span>1点あたり実質利益 — 電脳 <b class="num" style="color:var(--s1)">${yen(S.contrib)}</b> ／ 店舗 <b class="num" style="color:var(--s2)">${yen(S.stContrib)}</b>（純利益 − 外注 ${yen(S.listFee)}）。`
+    + (isFinite(S.beQty)
+      ? `レンタカー+固定費 ${yen((S.fixedDay+S.rentDay)*30)}/月 を賄う損益分岐は <b class="num" style="color:var(--ink)">月${pts(S.beQty)}点</b>`
+      : `1点あたり実質利益がマイナスのため、売るほど赤字になります`) + `</span>`;
+
+  /* チャネル別 */
+  const totQty = S.ch.reduce((a,c)=>a+c.qty,0), totCost = S.ch.reduce((a,c)=>a+c.cost,0);
+  const totGross = S.ch.reduce((a,c)=>a+c.gross,0), totDir = S.ch.reduce((a,c)=>a+c.direct,0);
+  const totCon = totGross - totDir;
+  const row = (c, isTotal) => `<tr${isTotal?' class="tot"':''}>
+      <td>${isTotal?"":`<i style="background:${c.color}"></i>`}${c.key}</td>
+      <td class="dim">${isTotal?"":c.detail}</td>
+      <td>${pts(c.qty)}</td><td>${yen(c.unit||0)}</td><td>${yen(c.cost)}</td>
+      <td>${yen(c.gross)}</td><td class="neg">−${yen(c.direct)}</td>
+      <td style="font-weight:600;color:${c.contrib<0?"var(--danger)":"var(--s2)"}">${yen(c.contrib)}</td>
+      <td class="dim">${c.cost>0?(c.contrib/c.cost*100).toFixed(1)+"%":"—"}</td></tr>`;
+  $("chbody").innerHTML = S.ch.map(c => row(c,false)).join("")
+    + row({key:"合計", qty:totQty, unit:totQty>0?totCost/totQty:0, cost:totCost, gross:totGross, direct:totDir, contrib:totCon}, true)
+    + `<tr class="ded"><td colspan="7">共通固定費（AIツール・その他）</td><td class="neg">−${yen(S.fixedDay*30)}</td><td></td></tr>`
+    + `<tr class="fin"><td colspan="7">月間営業利益</td><td>${yen(totCon - S.fixedDay*30)}</td><td class="dim">${totCost>0?((totCon-S.fixedDay*30)/totCost*100).toFixed(1)+"%":"—"}</td></tr>`;
+  $("k_end").innerHTML = man(S.last.asset) + "<small>円</small>";
+  $("k_end_s").textContent = `現金 ${man(S.last.cash)}円 + 在庫 ${man(S.last.invAmt)}円（${v.p_months}ヶ月後）`;
+
+  const exist = S.eTotal > 0 ? `<div class="alert neutral"><span class="ic">◇</span><span>既存在庫 <b>${pts(S.eTotal)}点（${yen(S.eAmt)}）</b>は仕入代金が支払済みなので、これから <b>${yen(S.eRecv)}</b> が現金として回収され、谷を浅くします。うち <b>${pts(S.eDead)}点</b> は最後まで売れない想定です。</span></div>` : "";
+  /* 出品が仕入に追いつくか */
+  let listing = "";
+  if (!S.noCap){
+    const over = S.blendQty - S.listCap;
+    if (over > 0.005){
+      listing = `<div class="alert bad"><span class="ic">!</span><span>出品が仕入に追いついていません。仕入 <b>${pts(S.blendQty)}点/日</b> に対して出品は <b>${pts(S.listCap)}点/日</b>。差の <b>${pts(over)}点/日</b> が毎日積み上がり、${S.v.p_months}ヶ月後には未出品が <b>${pts(S.backlogEnd)}点（${yen(S.backlogEnd*S.v.p_cost)}）</b> になります。出品数を <b>${pts(S.blendQty)}点/日</b> 以上にするか、仕入ペースを落としてください。</span></div>`;
+    } else if (S.backlogPeak > 0.5){
+      listing = `<div class="alert neutral"><span class="ic">◇</span><span>出品は仕入に追いついています（仕入 ${pts(S.blendQty)}点/日 ≦ 出品 ${pts(S.listCap)}点/日）。ただし店舗のまとめ買い直後は待ち行列ができ、未出品は最大 <b>${pts(S.backlogPeak)}点</b> まで膨らみます。出品までの待ち時間ぶん、売れ始めるのが遅れます。</span></div>`;
+    }
+  }
+  const short = S.min < 0;
+  $("verdict").innerHTML = exist + listing + (short
+    ? `<div class="alert bad"><span class="ic">!</span><span>初期資金 <b>${yen(v.p_cap)}</b> では <b>${S.minDay}日目</b>に <b>${yen(-S.min)}</b> の資金ショートが起きます。開始時点で <b>${yen(S.need)}</b> 以上、余裕を見るなら <b>${yen(Math.ceil(S.need*1.2/50000)*50000)}</b> を用意するか、仕入点数を絞ってください。</span></div>`
+    : `<div class="alert ok"><span class="ic">✓</span><span>初期資金 <b>${yen(v.p_cap)}</b> で回ります。最も細るのは <b>${S.minDay}日目</b>の <b>${yen(S.min)}</b>。${S.posDay ? `手元資金が初期水準に戻るのは <b>${S.posDay}日目（約${(S.posDay/30).toFixed(1)}ヶ月）</b>で、そこから先は毎月およそ <b>${yen(S.steadyMonthly)}</b> ずつ現金が増えていきます。` : ""}</span></div>`);
+
+  const tb = $("tbody"); tb.innerHTML = "";
+  const cls = n => n < 0 ? ' class="neg"' : "";
+  S.months.forEach(m => {
+    const tr = document.createElement("tr");
+    if (Math.abs(m.invQty - S.steadyInvQty) < 0.5 && m.m*30 >= S.avgHold*2) tr.className = "phase-end";
+    tr.innerHTML = `<td>${m.m}ヶ月目</td>
+      <td class="dim">${pts(m.buyQty)}</td><td class="dim">${yen(m.buyAmt)}</td>
+      <td class="dim">${pts(m.listedQty)}</td><td${m.unlisted>0.05?'':' class="dim"'}>${pts(m.unlisted)}</td>
+      <td>${pts(m.soldQty)}${m.soldOld>0.05?`<span style="color:var(--s3);font-size:10px"> 既${pts(m.soldOld)}</span>`:""}</td><td class="dim">${pts(m.soldSt)}</td>
+      <td${m.cutQty>0.05?' class="neg"':' class="dim"'}>${pts(m.cutQty)}</td><td>${yen(m.recv)}</td>
+      <td class="dim">${yen(m.grossProfit)}</td><td class="neg">−${yen(m.cost)}</td>
+      <td style="color:${m.profit<0?"var(--danger)":"var(--s2)"};font-weight:600">${yen(m.profit)}</td>
+      <td>${pts(m.invQty)}</td><td class="dim">${yen(m.invAmt)}</td>
+      <td${cls(m.cash)}>${yen(m.cash)}</td><td${cls(m.cum)}>${yen(m.cum)}</td>
+      <td style="font-weight:600">${yen(m.asset)}</td>`;
+    tb.appendChild(tr);
+  });
+  const T = S.months.reduce((a,m)=>({bq:a.bq+m.buyQty, ba:a.ba+m.buyAmt, sq:a.sq+m.soldQty, rv:a.rv+m.recv,
+    ls:a.ls+m.listedQty, ss:a.ss+m.soldSt, ct:a.ct+m.cutQty, gp:a.gp+m.grossProfit, cs:a.cs+m.cost, pf:a.pf+m.profit}),{bq:0,ba:0,ls:0,sq:0,ss:0,ct:0,rv:0,gp:0,cs:0,pf:0});
+  $("tfoot").innerHTML = `<tr><td>合計 / 期末</td><td>${pts(T.bq)}</td><td>${yen(T.ba)}</td><td>${pts(T.ls)}</td><td>${pts(S.last.unlisted)}</td><td>${pts(T.sq)}</td><td>${pts(T.ss)}</td><td${T.ct>0.05?' class="neg"':''}>${pts(T.ct)}</td><td>${yen(T.rv)}</td>
+    <td>${yen(T.gp)}</td><td class="neg">−${yen(T.cs)}</td><td style="color:var(--s2)">${yen(T.pf)}</td>
+    <td>${pts(S.last.inv)}</td><td>${yen(S.last.invAmt)}</td>
+    <td${cls(S.last.cash)}>${yen(S.last.cash)}</td><td${cls(S.last.cum)}>${yen(S.last.cum)}</td><td>${yen(S.last.asset)}</td></tr>`;
+}
+
+function csvText(S){
+  const h = ["月","仕入点数","仕入金額","出品点数","月末未出品","売却点数","うち店舗","うち既存在庫","うち損切り","売上入金","商品粗利","諸経費","営業利益",
+             "月末在庫点数","月末在庫金額","月末手元現金","累計営業利益","月末総資産"];
+  const r = m => [m.m, Math.round(m.buyQty*100)/100, Math.round(m.buyAmt),
+    Math.round(m.listedQty*100)/100, Math.round(m.unlisted*100)/100, Math.round(m.soldQty*100)/100,
+    Math.round(m.soldSt*100)/100, Math.round(m.soldOld*100)/100, Math.round(m.cutQty*100)/100,
+    Math.round(m.recv), Math.round(m.grossProfit), Math.round(m.cost), Math.round(m.profit),
+    Math.round(m.invQty*100)/100, Math.round(m.invAmt), Math.round(m.cash), Math.round(m.cum), Math.round(m.asset)];
+  return [h.join(","), ...S.months.map(m => r(m).join(","))].join("\n");
+}
+
+/* ---------------- wiring ---------------- */
+function windDown(v){
+  const stopMonth = Math.max(1, Math.min(36, Math.round(parseFloat($("w_stop").value) || 10)));
+  const stop = stopMonth*30;
+  const W = simulate(v, stop, MAXK + 20);
+  const all = W.rows;
+  const atStop = all[stop-1] || all[all.length-1];
+  // 在庫金額が停止時点の2%を切ったら打ち切って表示する
+  const floor = Math.max(atStop.invAmt*0.02, 1);
+  let endIdx = all.length - 1;
+  for (let i = stop; i < all.length; i++) if (all[i].invAmt <= floor){ endIdx = Math.min(all.length-1, i+20); break; }
+  const rows = all.slice(0, endIdx+1);
+  const last = rows[rows.length-1];
+  const from = Math.max(1, stop-45), to = last.d;
+  const view = rows.slice(from-1);
+  // 停止後に在庫から入ってくる現金
+  const recovered = last.cash - atStop.cash;
+  // 在庫金額が停止時点の5%を切る日／現金が在庫を追い越す日
+  const target = atStop.invAmt*0.10;
+  const doneRow = view.find(r => r.d > stop && r.invAmt <= Math.max(target, 1));
+  const half = view.find(r => r.d > stop && r.cash - atStop.cash >= recovered*0.5);
+  const crossRow = view.find(r => r.d > stop && r.cash >= r.invAmt);
+  return {stopMonth, stop, from, to, rows:view, atStop, last, recovered,
+    doneDay: doneRow ? doneRow.d - stop : null,
+    halfDay: half ? half.d - stop : null,
+    crossDay: crossRow ? crossRow.d : null,
+    deadAmt: last.invAmt, deadQty: last.inv};
+}
+
+function paintWind(S){
+  const D = S.wd;
+  $("w_inv").innerHTML = man(D.atStop.invAmt) + "<small>円</small>";
+  $("w_inv_s").textContent = `${pts(D.atStop.inv)}点。この時点の手元現金は ${yen(D.atStop.cash)}`;
+  $("w_recv").innerHTML = man(D.recovered) + "<small>円</small>";
+  $("w_recv_s").textContent = `在庫原価 ${man(D.atStop.invAmt)}円 に対して ${(D.atStop.invAmt>0?D.recovered/D.atStop.invAmt*100:0).toFixed(0)}%。差額が上乗せの利益です`;
+  $("w_cash").innerHTML = man(D.last.cash) + "<small>円</small>";
+  $("w_cash_s").textContent = `初期資金 ${man(S.v.p_cap)}円 に対して ${D.last.cash>=S.v.p_cap ? "+"+man(D.last.cash-S.v.p_cap)+"円" : man(D.last.cash-S.v.p_cap)+"円"}`;
+  $("w_days").innerHTML = (D.doneDay ? D.doneDay : "—") + "<small>日</small>";
+  $("w_days_s").textContent = D.doneDay
+    ? `90%を現金化するまで約${(D.doneDay/30).toFixed(1)}ヶ月。半分は${D.halfDay}日で戻ります`
+    : `売り切りません（最後まで残る在庫 ${pts(D.deadQty)}点・${man(D.deadAmt)}円）`;
+  $("w_assume").textContent = S.v.c_fixed > 0
+    ? `停止後は出品外注費・レンタカー代・AIツール代が消え、その他固定費 ${yen(S.v.c_fixed)}/月 のみ継続`
+    : "停止後は出品外注費・レンタカー代・AIツール代が消え、経費はゼロになります";
+}
+
+let STATE = null;
+function run(){
+  STATE = simulate(read());
+  STATE.wd = windDown(STATE.v);
+  paint(STATE); paintWind(STATE); renderCharts(STATE);
+}
+
+IDS.forEach(k => $(k).addEventListener("input", run));
+$("w_stop").addEventListener("input", run);
+$("btn_reset").addEventListener("click", () => { IDS.forEach(k => $(k).value = DEFAULTS[k]); $("w_stop").value = 10; run(); });
+$("btn_csv").addEventListener("click", e => {
+  const b = e.currentTarget, t = b.textContent;
+  navigator.clipboard.writeText(csvText(STATE))
+    .then(() => { b.textContent = "コピーしました"; setTimeout(()=>b.textContent = t, 1600); })
+    .catch(() => { b.textContent = "コピーできませんでした"; setTimeout(()=>b.textContent = t, 1600); });
+});
+$("stamp").textContent = "作成 " + new Date().toLocaleDateString("ja-JP");
+
+/* ---------------- 保存（downloads capability） ---------------- */
+const H2C   = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
+const JSPDF = "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
+let DL = null;
+
+const stamp = () => { const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; };
+
+function loadScript(src){
+  return new Promise((res, rej) => {
+    if (document.querySelector(`script[data-src="${src}"]`)) return res();
+    const s = document.createElement("script");
+    s.src = src; s.setAttribute("data-src", src);
+    s.onload = () => res(); s.onerror = () => rej(new Error("library_load_failed"));
+    document.head.appendChild(s);
+  });
+}
+
+/* SVG の属性に書いた var(--x) は書き出し時に解決されないので、実際の色に固定する */
+function freezeSvgColors(){
+  const cs = getComputedStyle(document.documentElement);
+  document.querySelectorAll("svg").forEach(svg => {
+    svg.querySelectorAll("*").forEach(n => {
+      ["fill","stroke"].forEach(a => {
+        const raw = n.getAttribute(a);
+        if (raw && raw.slice(0,4) === "var("){
+          const val = cs.getPropertyValue(raw.slice(4, raw.lastIndexOf(")")).trim()).trim();
+          if (val) n.setAttribute(a, val);
+        }
+      });
+    });
+  });
+}
+
+function buildExportHtml(){
+  document.querySelectorAll("input").forEach(i => i.setAttribute("value", i.value));
+  const clone = document.documentElement.cloneNode(true);
+  clone.querySelectorAll("[data-noexport]").forEach(n => n.remove());
+  clone.querySelectorAll("script").forEach(n => { if (n.src) n.remove(); });
+  let head = clone.querySelector("head");
+  if (!head){ head = document.createElement("head"); clone.insertBefore(head, clone.firstChild); }
+  if (!head.querySelector("title")){
+    const t = document.createElement("title");
+    t.textContent = "古着転売キャッシュフロー予測";
+    head.appendChild(t);
+  }
+  if (!head.querySelector("meta[charset]")){
+    const m = document.createElement("meta"); m.setAttribute("charset","utf-8");
+    head.insertBefore(m, head.firstChild);
+  }
+  return "<!doctype html>\n" + clone.outerHTML;
+}
+
+async function buildPdfBlob(){
+  await loadScript(H2C);
+  await loadScript(JSPDF);
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF({unit:"mm", format:"a4", orientation:"portrait"});
+  const PW = 210, PH = 297, MG = 10, CW = PW - MG*2, CH = PH - MG*2;
+  const bg = getComputedStyle(document.body).backgroundColor || "#ffffff";
+  const nodes = [...document.querySelectorAll(".wrap > header, .wrap > section:not([data-noexport]), .wrap > footer")];
+
+  freezeSvgColors();
+  let y = MG, first = true;
+  try {
+    for (const node of nodes){
+      const canvas = await html2canvas(node, {scale:2, backgroundColor:bg, logging:false, useCORS:true, imageTimeout:0});
+      const pxPerMm = canvas.width / CW;
+      const totalMm = canvas.height / pxPerMm;
+      if (totalMm <= CH){
+        if (!first && y + totalMm > MG + CH){ pdf.addPage(); y = MG; }
+        pdf.addImage(canvas.toDataURL("image/jpeg", 0.92), "JPEG", MG, y, CW, totalMm);
+        y += totalMm + 5;
+      } else {
+        let sy = 0;
+        while (sy < canvas.height - 1){
+          let availMm = MG + CH - y;
+          if (availMm < 30){ pdf.addPage(); y = MG; availMm = CH; }
+          const sliceH = Math.min(canvas.height - sy, Math.floor(availMm * pxPerMm));
+          const tmp = document.createElement("canvas");
+          tmp.width = canvas.width; tmp.height = sliceH;
+          tmp.getContext("2d").drawImage(canvas, 0, sy, canvas.width, sliceH, 0, 0, canvas.width, sliceH);
+          pdf.addImage(tmp.toDataURL("image/jpeg", 0.92), "JPEG", MG, y, CW, sliceH/pxPerMm);
+          y += sliceH/pxPerMm + 5; sy += sliceH;
+        }
+      }
+      first = false;
+    }
+  } finally {
+    if (STATE) renderCharts(STATE);   // var() 表記に戻す
+  }
+  const total = pdf.internal.getNumberOfPages();
+  for (let i=1; i<=total; i++){
+    pdf.setPage(i); pdf.setFontSize(8); pdf.setTextColor(155);
+    pdf.text(`${i} / ${total}`, PW/2, PH-5, {align:"center"});
+  }
+  return pdf.output("blob");
+}
+
+const ERR = {
+  declined:"保存はキャンセルされました",
+  rate_limited:"少し待ってからもう一度お試しください",
+  too_large:"ファイルが大きすぎます",
+  rejected_extension:"この形式は保存できません",
+  extension_not_enabled:"この形式は現在ご利用いただけません",
+};
+function bindSave(id, run){
+  const btn = $(id), label = btn.querySelector("b"), base = label.textContent;
+  btn.addEventListener("click", async () => {
+    if (btn.disabled) return;
+    btn.disabled = true; label.textContent = "準備中…";
+    try {
+      const file = await run();
+      await DL.save(file);
+      label.textContent = "保存しました";
+    } catch (e) {
+      label.textContent = ERR[e && e.code] || "保存できませんでした";
+    } finally {
+      btn.disabled = false;
+      setTimeout(() => { label.textContent = base; }, 2200);
+    }
+  });
+}
+
+(async () => {
+  if (!$("sv_na")) return;                       // 書き出したHTMLでは保存欄ごと存在しない
+  try { DL = window.claude ? await window.claude.use("downloads") : null; } catch (e) { DL = null; }
+  if (!DL){
+    $("sv_na").textContent = "この表示ではファイル保存が使えません。数値は「月次CSVをコピー」でスプレッドシートに貼り付けてください。";
+    return;
+  }
+  $("sv_na").remove();
+  ["sv_html","sv_pdf","sv_csv"].forEach(id => { $(id).hidden = false; });
+  bindSave("sv_html", async () => ({filename:`古着転売_資金繰り予測_${stamp()}.html`, data: buildExportHtml()}));
+  bindSave("sv_pdf",  async () => ({filename:`古着転売_資金繰り予測_${stamp()}.pdf`,  data: await buildPdfBlob()}));
+  bindSave("sv_csv",  async () => ({filename:`古着転売_月次予測_${stamp()}.csv`,      data: "﻿" + csvText(STATE)}));
+})();
+
+let raf = null;
+new ResizeObserver(() => { if (raf) cancelAnimationFrame(raf); raf = requestAnimationFrame(() => STATE && renderCharts(STATE)); })
+  .observe(document.querySelector(".wrap"));
+
+run();
+})();
+</script>
+
+</body>
+</html>
